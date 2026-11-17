@@ -1,0 +1,10 @@
+{
+  "name": "Presupuesto Automático",
+  "short_name": "Presupuesto",
+  "description": "Control de presupuesto personal automático - Orion",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#16a34a"
+}
