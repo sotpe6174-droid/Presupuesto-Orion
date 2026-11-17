@@ -1,0 +1,2469 @@
+<!DOCTYPE html>
+<html lang="es" data-bg="light" data-accent="leaf">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#15803D" id="metaThemeColor" />
+  <title>Presupuesto Automático • v1.0</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js para Gráficos Circulares Interactivos -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <!-- SheetJS para Exportación Nativa a Excel (.xlsx) con fallback CSV -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+
+  <!-- Tipografía Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ==========================================================================
+       SISTEMA DE TEMAS DUALES INDEPENDIENTES (FONDO + ACENTO DE LETRAS)
+       ========================================================================== */
+    :root {
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+      --danger: #EF4444;
+      --danger-soft: rgba(239, 68, 68, 0.13);
+      --warning: #F59E0B;
+      --warning-soft: rgba(245, 158, 11, 0.15);
+    }
+
+    /* 1A. Fondo: Blanco (Modo Claro Limpio) */
+    html[data-bg="light"] {
+      --bg-app: #F3F4F6;
+      --bg-card: #FFFFFF;
+      --bg-subtle: #F9FAFB;
+      --bg-pill: #EEF0F4;
+      --bg-glass: rgba(255, 255, 255, 0.9);
+      --border-color: #E5E7EB;
+      --text-primary: #111827;
+      --text-secondary: #6B7280;
+      --text-muted: #9CA3AF;
+      --shadow-card: 0 2px 14px rgba(0, 0, 0, 0.045);
+      --shadow-float: 0 10px 26px -5px rgba(0, 0, 0, 0.22);
+    }
+
+    /* 1B. Fondo: Negro (Modo Oscuro / OLED Puro #000000) */
+    html[data-bg="dark"] {
+      --bg-app: #000000;
+      --bg-card: #111215;
+      --bg-subtle: #181A1F;
+      --bg-pill: #20232B;
+      --bg-glass: rgba(17, 18, 21, 0.9);
+      --border-color: #262932;
+      --text-primary: #F9FAFB;
+      --text-secondary: #9CA3AF;
+      --text-muted: #6B7280;
+      --shadow-card: 0 4px 18px rgba(0, 0, 0, 0.65);
+      --shadow-float: 0 10px 30px -4px rgba(0, 0, 0, 0.85);
+    }
+
+    /* 2A. Acento: Verde Hoja (Modo Claro) */
+    html[data-bg="light"][data-accent="leaf"] {
+      --accent: #15803D;
+      --accent-hover: #166534;
+      --accent-soft: #DCFCE7;
+      --accent-soft-border: #BBF7D0;
+      --accent-text: #15803D;
+      --accent-on-solid: #FFFFFF;
+      --palette-1: #15803D;
+      --palette-2: #10B981;
+      --palette-3: #0D9488;
+      --palette-4: #3B82F6;
+      --palette-5: #84CC16;
+      --palette-6: #06B6D4;
+      --palette-7: #6366F1;
+    }
+
+    /* 2A. Acento: Verde Hoja (Modo Negro OLED) */
+    html[data-bg="dark"][data-accent="leaf"] {
+      --accent: #22C55E;
+      --accent-hover: #16A34A;
+      --accent-soft: rgba(34, 197, 94, 0.16);
+      --accent-soft-border: rgba(34, 197, 94, 0.35);
+      --accent-text: #4ADE80;
+      --accent-on-solid: #052E16;
+      --palette-1: #22C55E;
+      --palette-2: #34D399;
+      --palette-3: #2DD4BF;
+      --palette-4: #60A5FA;
+      --palette-5: #A3E635;
+      --palette-6: #22D3EE;
+      --palette-7: #818CF8;
+    }
+
+    /* 2B. Acento: Otoño Cálido (Modo Claro) */
+    html[data-bg="light"][data-accent="autumn"] {
+      --accent: #C2410C;
+      --accent-hover: #9A3412;
+      --accent-soft: #FFEDD5;
+      --accent-soft-border: #FED7AA;
+      --accent-text: #C2410C;
+      --accent-on-solid: #FFFFFF;
+      --palette-1: #C2410C;
+      --palette-2: #EA580C;
+      --palette-3: #D97706;
+      --palette-4: #B45309;
+      --palette-5: #E11D48;
+      --palette-6: #CA8A04;
+      --palette-7: #9333EA;
+    }
+
+    /* 2B. Acento: Otoño Cálido (Modo Negro OLED) */
+    html[data-bg="dark"][data-accent="autumn"] {
+      --accent: #F97316;
+      --accent-hover: #EA580C;
+      --accent-soft: rgba(249, 115, 22, 0.16);
+      --accent-soft-border: rgba(249, 115, 22, 0.35);
+      --accent-text: #FB923C;
+      --accent-on-solid: #2C0B02;
+      --palette-1: #F97316;
+      --palette-2: #FB923C;
+      --palette-3: #FBBF24;
+      --palette-4: #F59E0B;
+      --palette-5: #FB7185;
+      --palette-6: #EAB308;
+      --palette-7: #C084FC;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--bg-app);
+      color: var(--text-primary);
+      margin: 0;
+      padding: 0;
+      transition: background-color 0.25s ease, color 0.25s ease;
+      overflow-x: hidden;
+    }
+
+    .app-card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-card);
+      transition: background-color 0.25s ease, border-color 0.25s ease;
+    }
+
+    .app-subtle {
+      background-color: var(--bg-subtle);
+      border: 1px solid var(--border-color);
+    }
+
+    .app-pill {
+      background-color: var(--bg-pill);
+      color: var(--text-secondary);
+    }
+
+    .accent-text {
+      color: var(--accent-text);
+    }
+
+    .accent-bg {
+      background-color: var(--accent);
+      color: var(--accent-on-solid);
+    }
+
+    .accent-bg:active {
+      background-color: var(--accent-hover);
+      transform: scale(0.98);
+    }
+
+    .accent-soft-badge {
+      background-color: var(--accent-soft);
+      color: var(--accent-text);
+      border: 1px solid var(--accent-soft-border);
+    }
+
+    .glass-bar {
+      background-color: var(--bg-glass);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-color: var(--border-color);
+    }
+
+    /* Animaciones suaves estilo iOS */
+    @keyframes slideUpModal {
+      from { transform: translateY(100%); opacity: 0.7; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate-sheet {
+      animation: slideUpModal 0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    .animate-fade {
+      animation: fadeIn 0.22s ease-out forwards;
+    }
+
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    /* Safe areas para iPhone (Notch / Dynamic Island / Home Indicator) */
+    .pb-safe {
+      padding-bottom: calc(env(safe-area-inset-bottom, 16px) + 5.75rem);
+    }
+    .bottom-nav-safe {
+      padding-bottom: max(env(safe-area-inset-bottom, 10px), 10px);
+    }
+    .fab-safe {
+      bottom: calc(max(env(safe-area-inset-bottom, 12px), 12px) + 4.45rem);
+    }
+  </style>
+</head>
+<body>
+  <!-- Contenedor principal móvil-first centrado para iPhone / Safari -->
+  <div id="appContainer" class="max-w-md mx-auto min-h-screen relative pb-safe">
+
+    <!-- ======================================================================
+         CABECERA STICKY CON SELECTOR RÁPIDO DE TEMA DUAL Y FECHA DE PAGO
+         ====================================================================== -->
+    <header class="sticky top-0 z-30 glass-bar border-b px-4 pt-3 pb-2.5">
+      <div class="flex items-center justify-between gap-2">
+        <div>
+          <h1 class="text-lg font-extrabold tracking-tight accent-text leading-tight">
+            Presupuesto Automático
+          </h1>
+          <p class="text-[11px] font-medium" style="color: var(--text-secondary);">
+            Control inteligente • Soles (S/)
+          </p>
+        </div>
+
+        <!-- Controles rápidos independientes de Tema (Fondo + Acento) -->
+        <div class="flex items-center gap-1.5">
+          <button
+            id="btnToggleBg"
+            type="button"
+            title="Cambiar fondo Blanco / Negro"
+            class="h-9 px-2.5 rounded-xl app-subtle flex items-center gap-1.5 text-xs font-bold transition active:scale-95"
+          >
+            <span id="bgModeIcon">☀️</span>
+            <span id="bgModeLabel">Blanco</span>
+          </button>
+
+          <button
+            id="btnToggleAccent"
+            type="button"
+            title="Cambiar letras Verde Hoja / Otoño Cálido"
+            class="h-9 px-2.5 rounded-xl accent-soft-badge flex items-center gap-1.5 text-xs font-bold transition active:scale-95"
+          >
+            <span id="accentModeIcon">🍃</span>
+            <span id="accentModeLabel">Hoja</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Barra de Fecha de Pago (Calcula automáticamente las 4 semanas) -->
+      <div class="mt-2.5 flex items-center justify-between gap-2 rounded-xl px-3 py-1.5 app-subtle">
+        <label for="paydayInput" class="flex items-center gap-1.5 text-xs font-semibold" style="color: var(--text-secondary);">
+          <span>📅</span>
+          <span>Fecha de pago:</span>
+        </label>
+        <input
+          type="date"
+          id="paydayInput"
+          class="bg-transparent text-xs font-extrabold accent-text focus:outline-none cursor-pointer text-right"
+        />
+      </div>
+    </header>
+
+    <!-- ======================================================================
+         BANNER DE ALERTA AUTOMÁTICA DE DESCUADRE (VISIBLE SI SUMA != OBJETIVO)
+         ====================================================================== -->
+    <div id="discrepancyBannerWrapper" class="px-4 pt-3 hidden">
+      <div class="rounded-3xl p-3.5 border-2 border-red-500 bg-red-500/12 space-y-2 animate-fade">
+        <div class="flex items-start gap-2.5">
+          <span class="text-xl leading-none mt-0.5">🚨</span>
+          <div class="flex-1 min-w-0">
+            <div class="text-xs font-extrabold text-red-500 uppercase tracking-wide">
+              Error: Presupuesto Descuadrado (<span id="bannerDiffAmount">-S/ 8.00</span>)
+            </div>
+            <p id="bannerDiffDesc" class="text-[11px] mt-0.5 leading-snug" style="color: var(--text-primary);">
+              La suma de tus categorías (<strong>S/ 838.00</strong>) no coincide con tu Presupuesto Objetivo (<strong>S/ 830.00</strong>).
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onclick="openEditBudgetModal()"
+          class="w-full py-2.5 rounded-2xl text-xs font-extrabold text-white bg-red-600 hover:bg-red-700 transition active:scale-98"
+        >
+          ✏️ Editar Montos / Cuadrar Presupuesto
+        </button>
+      </div>
+    </div>
+
+    <!-- ======================================================================
+         PANEL SUPERIOR (KPIs EN TIEMPO REAL + TRANSFERENCIAS POR BANCO)
+         ====================================================================== -->
+    <section class="px-4 pt-3">
+      <div class="app-card rounded-3xl p-4">
+        <!-- Fila Superior: Saldo Restante + Botón Editar Montos / Fijos -->
+        <div class="flex items-start justify-between gap-2">
+          <div>
+            <span class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--text-secondary);">
+              Saldo Restante Total
+            </span>
+            <div id="kpiRemaining" class="text-3xl font-black tracking-tight mt-0.5 accent-text">
+              S/ 168.00
+            </div>
+          </div>
+          <div class="flex flex-col items-end gap-1.5">
+            <span id="cycleBadge" class="text-[10px] font-bold px-2.5 py-1 rounded-full accent-soft-badge">
+              Sem 1 activa
+            </span>
+            <button
+              type="button"
+              onclick="openEditBudgetModal()"
+              class="text-[11px] font-bold px-2.5 py-1 rounded-xl app-subtle flex items-center gap-1 active:scale-95 transition"
+            >
+              <span>✏️</span>
+              <span>Editar Montos / Fijos</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Barra de progreso global -->
+        <div class="mt-3">
+          <div class="w-full h-2 rounded-full overflow-hidden" style="background-color: var(--bg-pill);">
+            <div id="kpiProgressBar" class="h-full rounded-full transition-all duration-300" style="width: 79%; background-color: var(--accent);"></div>
+          </div>
+        </div>
+
+        <!-- Sub-KPIs: Presupuesto Objetivo vs Saldo Gastado Total -->
+        <div class="grid grid-cols-2 gap-2.5 mt-3.5 pt-3 border-t" style="border-color: var(--border-color);">
+          <div class="rounded-2xl p-2.5 app-subtle">
+            <div class="text-[11px] font-medium" style="color: var(--text-secondary);">Presupuesto Objetivo</div>
+            <div id="kpiTargetBudget" class="text-base font-extrabold mt-0.5">S/ 830.00</div>
+          </div>
+          <div class="rounded-2xl p-2.5 app-subtle">
+            <div class="text-[11px] font-medium" style="color: var(--text-secondary);">Saldo Gastado Total</div>
+            <div id="kpiSpent" class="text-base font-extrabold mt-0.5">S/ 662.00</div>
+          </div>
+        </div>
+
+        <!-- Vista rápida de Transferencias por Banco / Billetera -->
+        <div class="mt-3 pt-2.5 border-t" style="border-color: var(--border-color);">
+          <button
+            id="btnToggleBanks"
+            type="button"
+            class="w-full flex items-center justify-between py-1 text-xs font-bold"
+            style="color: var(--text-secondary);"
+          >
+            <span class="flex items-center gap-1.5">
+              <span>🏦</span>
+              <span>Transferencias por Banco (BN, BBVA, YAPE, BCP...)</span>
+            </span>
+            <span id="bankChevron" class="transition-transform duration-200">▼</span>
+          </button>
+
+          <!-- Chips rápidos siempre visibles de los 5 bancos -->
+          <div id="bankQuickChips" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-2">
+            <!-- Renderizado dinámicamente -->
+          </div>
+
+          <!-- Detalle desplegable por banco -->
+          <div id="bankSummaryDrawer" class="hidden mt-2.5 space-y-2 animate-fade">
+            <!-- Renderizado dinámicamente -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         CONTENIDO PRINCIPAL POR PESTAÑAS (4 PESTAÑAS)
+         ====================================================================== -->
+    <main id="mainTabContent" class="px-4 pt-3 space-y-4">
+      <!-- Pestaña 1: Inicio (Variables Semanales, Bolsas y Fijos/Apartados) -->
+      <div id="tab-inicio" class="space-y-4 animate-fade"></div>
+
+      <!-- Pestaña 2: Movimientos (Historial completo con filtros) -->
+      <div id="tab-movimientos" class="hidden space-y-3 animate-fade"></div>
+
+      <!-- Pestaña 3: Resumen (Gráficos Circulares Interactivos) -->
+      <div id="tab-resumen" class="hidden space-y-4 animate-fade"></div>
+
+      <!-- Pestaña 4: Ajustes (Tema Dual, Exportar Excel/CSV, Nuevo Ciclo, Acerca de) -->
+      <div id="tab-ajustes" class="hidden space-y-4 animate-fade"></div>
+    </main>
+
+    <!-- ======================================================================
+         BOTÓN FLOTANTE PRINCIPAL (+ REGISTRAR GASTO RÁPIDO)
+         ====================================================================== -->
+    <button
+      id="btnOpenExpenseModal"
+      type="button"
+      class="fixed right-4 sm:right-auto sm:ml-[235px] fab-safe z-30 accent-bg rounded-full px-5 py-3.5 font-extrabold text-sm flex items-center gap-2 transition-transform active:scale-95"
+      style="box-shadow: var(--shadow-float);"
+    >
+      <span class="text-lg leading-none">+</span>
+      <span>Registrar Gasto</span>
+    </button>
+
+    <!-- ======================================================================
+         BARRA DE NAVEGACIÓN INFERIOR FIJA (4 PESTAÑAS)
+         ====================================================================== -->
+    <nav class="fixed bottom-0 left-0 right-0 z-30 glass-bar border-t bottom-nav-safe">
+      <div class="max-w-md mx-auto grid grid-cols-4 px-2 pt-1.5">
+        <button type="button" data-tab="inicio" class="nav-btn flex flex-col items-center justify-center py-1 rounded-xl transition">
+          <span class="text-lg leading-none">🏠</span>
+          <span class="text-[10px] font-bold mt-1">Inicio</span>
+        </button>
+        <button type="button" data-tab="movimientos" class="nav-btn flex flex-col items-center justify-center py-1 rounded-xl transition">
+          <span class="text-lg leading-none">🧾</span>
+          <span class="text-[10px] font-bold mt-1">Movimientos</span>
+        </button>
+        <button type="button" data-tab="resumen" class="nav-btn flex flex-col items-center justify-center py-1 rounded-xl transition">
+          <span class="text-lg leading-none">◔</span>
+          <span class="text-[10px] font-bold mt-1">Resumen</span>
+        </button>
+        <button type="button" data-tab="ajustes" class="nav-btn flex flex-col items-center justify-center py-1 rounded-xl transition">
+          <span class="text-lg leading-none">⚙️</span>
+          <span class="text-[10px] font-bold mt-1">Ajustes</span>
+        </button>
+      </div>
+    </nav>
+  </div>
+
+  <!-- ========================================================================
+       MODAL 1: REGISTRAR GASTO RÁPIDO (BOTTOM SHEET iOS)
+       ======================================================================== -->
+  <div id="expenseModal" class="fixed inset-0 z-50 hidden">
+    <div id="expenseModalBackdrop" class="absolute inset-0 bg-black/60 backdrop-blur-xs"></div>
+    <div class="absolute bottom-0 left-0 right-0 max-w-md mx-auto app-card rounded-t-3xl p-5 pb-8 max-h-[90vh] overflow-y-auto animate-sheet border-b-0">
+      <div class="w-10 h-1.5 rounded-full mx-auto mb-4" style="background-color: var(--border-color);"></div>
+
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-extrabold accent-text">Registrar Nuevo Gasto</h2>
+        <button type="button" id="btnCloseExpenseModal" class="w-8 h-8 rounded-full app-pill flex items-center justify-center text-sm font-bold">✕</button>
+      </div>
+
+      <form id="expenseForm" class="space-y-4">
+        <!-- 1. Categoría -->
+        <div>
+          <label class="block text-xs font-bold mb-1.5" style="color: var(--text-secondary);">Categoría y Cuenta</label>
+          <div class="grid grid-cols-2 gap-2" id="categorySelectorGrid">
+            <button type="button" data-cat="necesidades" class="cat-choice-btn p-2.5 rounded-2xl border text-left transition">
+              <div class="text-xs font-extrabold">🛒 Necesidades</div>
+              <div class="text-[10px] font-semibold opacity-75">Cuenta: YAPE</div>
+            </button>
+            <button type="button" data-cat="transporte" class="cat-choice-btn p-2.5 rounded-2xl border text-left transition">
+              <div class="text-xs font-extrabold">🚌 Transporte</div>
+              <div class="text-[10px] font-semibold opacity-75">Cuenta: BBVA</div>
+            </button>
+            <button type="button" data-cat="materiales" class="cat-choice-btn p-2.5 rounded-2xl border text-left transition">
+              <div class="text-xs font-extrabold">🏠 Materiales u hogar</div>
+              <div class="text-[10px] font-semibold opacity-75">Cuenta: BCP</div>
+            </button>
+            <button type="button" data-cat="mama" class="cat-choice-btn p-2.5 rounded-2xl border text-left transition">
+              <div class="text-xs font-extrabold">❤️ Mamá</div>
+              <div class="text-[10px] font-semibold opacity-75">Cuenta: BN</div>
+            </button>
+          </div>
+        </div>
+
+        <!-- 2. Semana del ciclo (Necesidades / Transporte) -->
+        <div id="weekSelectorWrapper">
+          <label class="block text-xs font-bold mb-1.5" style="color: var(--text-secondary);">Semana del ciclo</label>
+          <div class="grid grid-cols-4 gap-1.5" id="weekSelectorGrid"></div>
+        </div>
+
+        <!-- 3A. Subcategorías exclusivas para Transporte -->
+        <div id="transportSubcatWrapper" class="hidden space-y-2.5">
+          <div>
+            <label class="block text-xs font-bold mb-1.5" style="color: var(--text-secondary);">Tipo de Transporte</label>
+            <div class="grid grid-cols-4 gap-2" id="transportTypeGrid">
+              <button type="button" data-transport="Bus" class="transport-btn py-2.5 px-1 rounded-2xl border text-center transition">
+                <div class="text-base">🚌</div>
+                <div class="text-[11px] font-bold mt-0.5">Bus</div>
+              </button>
+              <button type="button" data-transport="Combi" class="transport-btn py-2.5 px-1 rounded-2xl border text-center transition">
+                <div class="text-base">🚐</div>
+                <div class="text-[11px] font-bold mt-0.5">Combi</div>
+              </button>
+              <button type="button" data-transport="Colectivo" class="transport-btn py-2.5 px-1 rounded-2xl border text-center transition">
+                <div class="text-base">🚙</div>
+                <div class="text-[11px] font-bold mt-0.5">Colectivo</div>
+              </button>
+              <button type="button" data-transport="Taxi" class="transport-btn py-2.5 px-1 rounded-2xl border text-center transition">
+                <div class="text-base">🚕</div>
+                <div class="text-[11px] font-bold mt-0.5">Taxi</div>
+              </button>
+            </div>
+          </div>
+          <div>
+            <label for="transportNoteInput" class="block text-xs font-bold mb-1" style="color: var(--text-secondary);">Ruta o nota (opcional)</label>
+            <input
+              type="text"
+              id="transportNoteInput"
+              placeholder="Ej. Casa - Trabajo / Centro"
+              class="w-full rounded-2xl px-3.5 py-2.5 text-sm app-subtle focus:outline-none"
+            />
+          </div>
+        </div>
+
+        <!-- 3B. Producto / Concepto -->
+        <div id="conceptWrapper">
+          <label for="conceptInput" class="block text-xs font-bold mb-1" style="color: var(--text-secondary);">Producto o Concepto</label>
+          <input
+            type="text"
+            id="conceptInput"
+            placeholder="Ej. Menú, Pañuelos, Detergente..."
+            class="w-full rounded-2xl px-3.5 py-2.5 text-sm app-subtle focus:outline-none"
+          />
+        </div>
+
+        <!-- 4. Monto en Soles -->
+        <div>
+          <label for="amountInput" class="block text-xs font-bold mb-1" style="color: var(--text-secondary);">Monto (S/)</label>
+          <div class="relative">
+            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-lg font-extrabold accent-text">S/</span>
+            <input
+              type="number"
+              id="amountInput"
+              step="0.01"
+              min="0.10"
+              inputmode="decimal"
+              placeholder="0.00"
+              required
+              class="w-full rounded-2xl pl-11 pr-4 py-3 text-xl font-extrabold app-subtle focus:outline-none"
+            />
+          </div>
+          <div class="flex items-center gap-1.5 mt-2 overflow-x-auto no-scrollbar">
+            <button type="button" data-quick-amount="1.00" class="quick-amt-btn px-3 py-1.5 rounded-xl text-xs font-bold app-pill shrink-0 active:scale-95">S/ 1.00</button>
+            <button type="button" data-quick-amount="1.50" class="quick-amt-btn px-3 py-1.5 rounded-xl text-xs font-bold app-pill shrink-0 active:scale-95">S/ 1.50</button>
+            <button type="button" data-quick-amount="2.00" class="quick-amt-btn px-3 py-1.5 rounded-xl text-xs font-bold app-pill shrink-0 active:scale-95">S/ 2.00</button>
+            <button type="button" data-quick-amount="5.00" class="quick-amt-btn px-3 py-1.5 rounded-xl text-xs font-bold app-pill shrink-0 active:scale-95">S/ 5.00</button>
+            <button type="button" data-quick-amount="10.00" class="quick-amt-btn px-3 py-1.5 rounded-xl text-xs font-bold app-pill shrink-0 active:scale-95">S/ 10.00</button>
+          </div>
+        </div>
+
+        <button type="submit" class="w-full py-3.5 rounded-2xl font-extrabold text-sm accent-bg transition mt-2">
+          Guardar y Descontar Automáticamente
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       MODAL 2: EDITOR DE MONTOS FIJOS Y PRESUPUESTO CON VALIDACIÓN DE CUADRE
+       ======================================================================== -->
+  <div id="editBudgetModal" class="fixed inset-0 z-50 hidden">
+    <div id="editBudgetBackdrop" class="absolute inset-0 bg-black/65 backdrop-blur-xs"></div>
+    <div class="absolute bottom-0 left-0 right-0 max-w-md mx-auto app-card rounded-t-3xl p-5 pb-8 max-h-[92vh] overflow-y-auto animate-sheet border-b-0">
+      <div class="w-10 h-1.5 rounded-full mx-auto mb-3" style="background-color: var(--border-color);"></div>
+
+      <div class="flex items-center justify-between mb-3">
+        <div>
+          <h2 class="text-lg font-extrabold accent-text">Editor de Montos y Fijos</h2>
+          <p class="text-[11px]" style="color: var(--text-secondary);">La suma de categorías debe cuadrar exactamente con tu ingreso</p>
+        </div>
+        <button type="button" id="btnCloseEditBudget" class="w-8 h-8 rounded-full app-pill flex items-center justify-center text-sm font-bold">✕</button>
+      </div>
+
+      <!-- Panel de Validación de Cuadre en Tiempo Real -->
+      <div id="editorBalanceBox" class="rounded-2xl p-3 mb-4 border transition-all">
+        <div class="grid grid-cols-3 gap-2 text-center">
+          <div>
+            <div class="text-[10px] font-semibold" style="color: var(--text-secondary);">Objetivo</div>
+            <div id="edPreviewTarget" class="text-xs font-extrabold mt-0.5">S/ 830.00</div>
+          </div>
+          <div>
+            <div class="text-[10px] font-semibold" style="color: var(--text-secondary);">Suma Cat.</div>
+            <div id="edPreviewAssigned" class="text-xs font-extrabold mt-0.5">S/ 838.00</div>
+          </div>
+          <div>
+            <div class="text-[10px] font-semibold" style="color: var(--text-secondary);">Diferencia</div>
+            <div id="edPreviewDiff" class="text-xs font-extrabold mt-0.5 text-red-500">-S/ 8.00</div>
+          </div>
+        </div>
+
+        <!-- Caja de Error cuando no cuadre -->
+        <div id="editorErrorAlert" class="hidden mt-2.5 pt-2.5 border-t border-red-500/30 space-y-2">
+          <div id="editorErrorText" class="text-[11px] font-bold text-red-500 leading-snug">
+            ⚠️ Error: El presupuesto no cuadra por S/ 8.00. Ajusta una categoría o el ingreso total para equilibrarlo.
+          </div>
+          <!-- Botones rápidos de auto-cuadre en 1 toque -->
+          <div id="editorQuickFixContainer" class="flex flex-wrap gap-1.5"></div>
+        </div>
+
+        <!-- Mensaje de éxito cuando cuadra -->
+        <div id="editorOkAlert" class="hidden mt-2 pt-2 border-t border-emerald-500/25 text-[11px] font-bold text-emerald-500 text-center">
+          ✅ Presupuesto cuadrado al 100 % (Diferencia S/ 0.00)
+        </div>
+      </div>
+
+      <form id="editBudgetForm" class="space-y-4">
+        <!-- Ingreso / Presupuesto Total Objetivo -->
+        <div class="p-3 rounded-2xl accent-soft-badge">
+          <label for="editTargetBudget" class="block text-xs font-extrabold">💰 Presupuesto / Ingreso Total Objetivo (S/)</label>
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            id="editTargetBudget"
+            class="w-full mt-1 bg-transparent text-lg font-black focus:outline-none"
+          />
+        </div>
+
+        <!-- Grupo A: Saldos Fijos / Apartados -->
+        <div class="space-y-2">
+          <div class="text-xs font-extrabold uppercase tracking-wider accent-text">Grupo A • Fijos y Apartados (Descuento Global)</div>
+          <div class="grid grid-cols-2 gap-2.5">
+            <div class="p-2.5 rounded-2xl app-subtle">
+              <label for="editInternet" class="block text-[11px] font-bold">🌐 Internet (BN)</label>
+              <input type="number" step="0.01" min="0" id="editInternet" class="w-full mt-1 bg-transparent text-sm font-extrabold focus:outline-none" />
+            </div>
+            <div class="p-2.5 rounded-2xl app-subtle">
+              <label for="editSpotify" class="block text-[11px] font-bold">🎵 Spotify (BN)</label>
+              <input type="number" step="0.01" min="0" id="editSpotify" class="w-full mt-1 bg-transparent text-sm font-extrabold focus:outline-none" />
+            </div>
+            <div class="p-2.5 rounded-2xl app-subtle">
+              <label for="editAhorro" class="block text-[11px] font-bold">💰 Ahorro (EFECTIVA)</label>
+              <input type="number" step="0.01" min="0" id="editAhorro" class="w-full mt-1 bg-transparent text-sm font-extrabold focus:outline-none" />
+            </div>
+            <div class="p-2.5 rounded-2xl app-subtle">
+              <label for="editMama" class="block text-[11px] font-bold">❤️ Mamá (BN)</label>
+              <input type="number" step="0.01" min="0" id="editMama" class="w-full mt-1 bg-transparent text-sm font-extrabold focus:outline-none" />
+            </div>
+          </div>
+
+          <!-- Transporte 4 Semanas -->
+          <div class="p-3 rounded-2xl app-subtle space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-extrabold">🚌 Transporte (BBVA) - Semanas</span>
+              <span id="editTransportTotalPreview" class="text-xs font-extrabold accent-text">S/ 250.00</span>
+            </div>
+            <div class="grid grid-cols-4 gap-1.5">
+              <div class="p-1.5 rounded-xl app-card">
+                <label class="block text-[9px] font-semibold" style="color: var(--text-secondary);">Sem 1</label>
+                <input type="number" step="0.01" min="0" id="editTransW1" class="w-full mt-0.5 bg-transparent text-xs font-extrabold focus:outline-none" />
+              </div>
+              <div class="p-1.5 rounded-xl app-card">
+                <label class="block text-[9px] font-semibold" style="color: var(--text-secondary);">Sem 2</label>
+                <input type="number" step="0.01" min="0" id="editTransW2" class="w-full mt-0.5 bg-transparent text-xs font-extrabold focus:outline-none" />
+              </div>
+              <div class="p-1.5 rounded-xl app-card">
+                <label class="block text-[9px] font-semibold" style="color: var(--text-secondary);">Sem 3</label>
+                <input type="number" step="0.01" min="0" id="editTransW3" class="w-full mt-0.5 bg-transparent text-xs font-extrabold focus:outline-none" />
+              </div>
+              <div class="p-1.5 rounded-xl app-card">
+                <label class="block text-[9px] font-semibold" style="color: var(--text-secondary);">Sem 4</label>
+                <input type="number" step="0.01" min="0" id="editTransW4" class="w-full mt-0.5 bg-transparent text-xs font-extrabold focus:outline-none" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Grupo B: Variables -->
+        <div class="space-y-2">
+          <div class="text-xs font-extrabold uppercase tracking-wider accent-text">Grupo B • Variables (Descuento Dinámico)</div>
+
+          <div class="p-2.5 rounded-2xl app-subtle">
+            <label for="editMateriales" class="block text-[11px] font-bold">🏠 Materiales u hogar (BCP)</label>
+            <input type="number" step="0.01" min="0" id="editMateriales" class="w-full mt-1 bg-transparent text-sm font-extrabold focus:outline-none" />
+          </div>
+
+          <div class="p-3 rounded-2xl app-subtle space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-extrabold">🛒 Necesidades (YAPE) - Semanas</span>
+              <span id="editNecesidadesTotalPreview" class="text-xs font-extrabold accent-text">S/ 126.00</span>
+            </div>
+            <div class="grid grid-cols-4 gap-1.5">
+              <div class="p-1.5 rounded-xl app-card">
+                <label class="block text-[9px] font-semibold" style="color: var(--text-secondary);">Sem 1</label>
+                <input type="number" step="0.01" min="0" id="editNecW1" class="w-full mt-0.5 bg-transparent text-xs font-extrabold focus:outline-none" />
+              </div>
+              <div class="p-1.5 rounded-xl app-card">
+                <label class="block text-[9px] font-semibold" style="color: var(--text-secondary);">Sem 2</label>
+                <input type="number" step="0.01" min="0" id="editNecW2" class="w-full mt-0.5 bg-transparent text-xs font-extrabold focus:outline-none" />
+              </div>
+              <div class="p-1.5 rounded-xl app-card">
+                <label class="block text-[9px] font-semibold" style="color: var(--text-secondary);">Sem 3</label>
+                <input type="number" step="0.01" min="0" id="editNecW3" class="w-full mt-0.5 bg-transparent text-xs font-extrabold focus:outline-none" />
+              </div>
+              <div class="p-1.5 rounded-xl app-card">
+                <label class="block text-[9px] font-semibold" style="color: var(--text-secondary);">Sem 4</label>
+                <input type="number" step="0.01" min="0" id="editNecW4" class="w-full mt-0.5 bg-transparent text-xs font-extrabold focus:outline-none" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          id="btnSaveBudgetChanges"
+          class="w-full py-3.5 rounded-2xl font-extrabold text-sm accent-bg transition disabled:opacity-40 disabled:pointer-events-none"
+        >
+          Guardar Cambios Cuadrados
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       MODAL 3: DOBLE CONFIRMACIÓN PERSONALIZADA (SIN alert() NI confirm())
+       ======================================================================== -->
+  <div id="confirmModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+    <div id="confirmBackdrop" class="absolute inset-0 bg-black/65 backdrop-blur-xs"></div>
+    <div class="relative w-full max-w-sm app-card rounded-3xl p-5 animate-fade">
+      <div id="confirmStepBadge" class="inline-block text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-red-500/15 text-red-500 mb-2">
+        Confirmación
+      </div>
+      <h3 id="confirmTitle" class="text-base font-extrabold">Confirmar acción</h3>
+      <p id="confirmMessage" class="text-xs mt-1.5 leading-relaxed" style="color: var(--text-secondary);">
+        ¿Estás seguro?
+      </p>
+      <div class="grid grid-cols-2 gap-2.5 mt-5">
+        <button type="button" id="btnConfirmCancel" class="py-2.5 rounded-2xl text-xs font-bold app-pill">
+          Cancelar
+        </button>
+        <button type="button" id="btnConfirmOk" class="py-2.5 rounded-2xl text-xs font-bold text-white bg-red-600 hover:bg-red-700 transition">
+          Confirmar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       TOAST / NOTIFICACIÓN FLOTANTE
+       ======================================================================== -->
+  <div id="toastBanner" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 hidden px-4 py-2.5 rounded-full text-xs font-bold shadow-lg accent-bg transition-all">
+    Guardado
+  </div>
+
+  <script>
+    /* ==========================================================================
+       ESTADO Y CONFIGURACIÓN INICIAL (PERSISTENTE EN LOCALSTORAGE)
+       ========================================================================== */
+    const STORAGE_KEY = 'presupuesto_automatico_orion_v1';
+
+    function getDefaultPayday() {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = now.getDate() >= 15 ? '15' : '01';
+      return `${year}-${month}-${day}`;
+    }
+
+    // Estado inicial con Internet actualizado a S/ 50.00 frente al objetivo de S/ 830.00
+    const DEFAULT_STATE = {
+      theme: {
+        bg: 'light',       // 'light' | 'dark'
+        accent: 'leaf'     // 'leaf' | 'autumn'
+      },
+      payday: getDefaultPayday(),
+      targetBudget: 830.00,
+      budgets: {
+        internet: { name: 'Internet', bank: 'BN', amount: 50.00, group: 'fijo', note: 'Pago: día 25 de cada mes' },
+        spotify: { name: 'Spotify', bank: 'BN', amount: 12.00, group: 'fijo', note: 'Suscripción mensual' },
+        ahorro: { name: 'Ahorro', bank: 'EFECTIVA', amount: 250.00, group: 'fijo', note: 'Fondo intangible' },
+        transporte: {
+          name: 'Transporte',
+          bank: 'BBVA',
+          group: 'apartado_semanal',
+          weeks: [60.00, 60.00, 60.00, 70.00] // Suma = S/ 250.00
+        },
+        mama: {
+          name: 'Mamá',
+          bank: 'BN',
+          amount: 100.00,
+          group: 'apartado_bolsa'
+        },
+        necesidades: {
+          name: 'Necesidades',
+          bank: 'YAPE',
+          group: 'variable_semanal',
+          weeks: [34.00, 34.00, 34.00, 24.00], // Suma = S/ 126.00
+          maxResponsible: 20.00
+        },
+        materiales: {
+          name: 'Materiales u hogar',
+          bank: 'BCP',
+          amount: 50.00,
+          group: 'variable_bolsa'
+        }
+      },
+      expenses: []
+    };
+
+    let state = loadState();
+    let activeTab = 'inicio';
+    let bankDrawerOpen = false;
+    let selectedModalCat = 'necesidades';
+    let selectedModalWeek = 1;
+    let selectedTransportType = 'Bus';
+    let historyFilter = 'all';
+    let pendingConfirmCallback = null;
+    let chartInstances = {};
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return structuredClone(DEFAULT_STATE);
+        const parsed = JSON.parse(raw);
+        return {
+          theme: { ...DEFAULT_STATE.theme, ...(parsed.theme || {}) },
+          payday: parsed.payday || DEFAULT_STATE.payday,
+          targetBudget: typeof parsed.targetBudget === 'number' ? parsed.targetBudget : DEFAULT_STATE.targetBudget,
+          budgets: {
+            internet: { ...DEFAULT_STATE.budgets.internet, ...(parsed.budgets?.internet || {}) },
+            spotify: { ...DEFAULT_STATE.budgets.spotify, ...(parsed.budgets?.spotify || {}) },
+            ahorro: { ...DEFAULT_STATE.budgets.ahorro, ...(parsed.budgets?.ahorro || {}) },
+            transporte: {
+              ...DEFAULT_STATE.budgets.transporte,
+              ...(parsed.budgets?.transporte || {}),
+              weeks: parsed.budgets?.transporte?.weeks || [...DEFAULT_STATE.budgets.transporte.weeks]
+            },
+            mama: { ...DEFAULT_STATE.budgets.mama, ...(parsed.budgets?.mama || {}) },
+            necesidades: {
+              ...DEFAULT_STATE.budgets.necesidades,
+              ...(parsed.budgets?.necesidades || {}),
+              weeks: parsed.budgets?.necesidades?.weeks || [...DEFAULT_STATE.budgets.necesidades.weeks]
+            },
+            materiales: { ...DEFAULT_STATE.budgets.materiales, ...(parsed.budgets?.materiales || {}) }
+          },
+          expenses: Array.isArray(parsed.expenses) ? parsed.expenses : []
+        };
+      } catch (e) {
+        console.error('Error cargando localStorage:', e);
+        return structuredClone(DEFAULT_STATE);
+      }
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (e) {
+        console.error('Error guardando en localStorage:', e);
+      }
+    }
+
+    /* ==========================================================================
+       UTILIDADES DE FECHA, MONEDA Y CÁLCULO AUTOMÁTICO DE SEMANAS
+       ========================================================================== */
+    function formatPEN(val) {
+      const num = Number(val) || 0;
+      const abs = Math.abs(num).toFixed(2);
+      return num < -0.004 ? `-S/ ${abs}` : `S/ ${abs}`;
+    }
+
+    function parseLocalDate(dateStr) {
+      const [y, m, d] = (dateStr || getDefaultPayday()).split('-').map(Number);
+      return new Date(y, m - 1, d, 0, 0, 0, 0);
+    }
+
+    function addDays(date, days) {
+      const d = new Date(date.getTime());
+      d.setDate(d.getDate() + days);
+      return d;
+    }
+
+    const MONTHS_SHORT = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+
+    function formatShortDate(date) {
+      return `${date.getDate()} ${MONTHS_SHORT[date.getMonth()]}`;
+    }
+
+    function getCycleWeeks(paydayStr) {
+      const start = parseLocalDate(paydayStr);
+      const w1Start = start;
+      const w1End = addDays(start, 6);
+
+      const w2Start = addDays(start, 7);
+      const w2End = addDays(start, 13);
+
+      const w3Start = addDays(start, 14);
+      const w3End = addDays(start, 20);
+
+      const w4Start = addDays(start, 21);
+      const nextPayday = new Date(start.getFullYear(), start.getMonth() + 1, start.getDate());
+      const w4End = addDays(nextPayday, -1);
+      const safeW4End = w4End >= w4Start ? w4End : addDays(start, 27);
+
+      const ranges = [
+        { week: 1, start: w1Start, end: w1End },
+        { week: 2, start: w2Start, end: w2End },
+        { week: 3, start: w3Start, end: w3End },
+        { week: 4, start: w4Start, end: safeW4End }
+      ];
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      let activeWeek = 1;
+      for (const r of ranges) {
+        if (today >= r.start && today <= r.end) {
+          activeWeek = r.week;
+          break;
+        }
+      }
+
+      return ranges.map(r => ({
+        ...r,
+        label: `${formatShortDate(r.start)} - ${formatShortDate(r.end)}`,
+        isCurrent: r.week === activeWeek
+      }));
+    }
+
+    function formatTimestampNow() {
+      const now = new Date();
+      const day = now.getDate();
+      const month = MONTHS_SHORT[now.getMonth()];
+      let hours = now.getHours();
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const ampm = hours >= 12 ? 'p. m.' : 'a. m.';
+      hours = hours % 12;
+      hours = hours ? hours : 12;
+      const hourStr = String(hours).padStart(2, '0');
+      return `${day} ${month}, ${hourStr}:${minutes} ${ampm}`;
+    }
+
+    /* ==========================================================================
+       MOTOR FINANCIERO EN TIEMPO REAL (KPIs, CUADRE, BANCOS Y ARRASTRE SEMANAL)
+       ========================================================================== */
+    function computeFinancials() {
+      const b = state.budgets;
+      const targetBudget = Number(state.targetBudget) || 0;
+
+      const transporteTotal = b.transporte.weeks.reduce((acc, v) => acc + Number(v || 0), 0);
+      const necesidadesTotal = b.necesidades.weeks.reduce((acc, v) => acc + Number(v || 0), 0);
+
+      // Grupo A: Descuento Global Automático (se restan de golpe al iniciar el ciclo)
+      const groupATotal =
+        Number(b.internet.amount) +
+        Number(b.spotify.amount) +
+        Number(b.ahorro.amount) +
+        transporteTotal +
+        Number(b.mama.amount);
+
+      // Grupo B: Variables
+      const groupBTotal = necesidadesTotal + Number(b.materiales.amount);
+
+      // Suma total asignada en las 7 categorías
+      const assignedSum = Number((groupATotal + groupBTotal).toFixed(2));
+      const discrepancy = Number((targetBudget - assignedSum).toFixed(2)); // < 0 si se pasó del objetivo
+
+      // Gastos registrados por categoría
+      const expNecesidades = state.expenses.filter(e => e.category === 'necesidades');
+      const expMateriales = state.expenses.filter(e => e.category === 'materiales');
+      const expTransporte = state.expenses.filter(e => e.category === 'transporte');
+      const expMama = state.expenses.filter(e => e.category === 'mama');
+
+      const spentNecesidades = expNecesidades.reduce((s, e) => s + Number(e.amount), 0);
+      const spentMateriales = expMateriales.reduce((s, e) => s + Number(e.amount), 0);
+      const spentTransporte = expTransporte.reduce((s, e) => s + Number(e.amount), 0);
+      const spentMama = expMama.reduce((s, e) => s + Number(e.amount), 0);
+
+      // Saldo Gastado Total = Grupo A (de golpe) + Variables gastados (Necesidades + Materiales)
+      const dynamicSpent = spentNecesidades + spentMateriales;
+      const totalSpent = Number((groupATotal + dynamicSpent).toFixed(2));
+      const totalRemaining = Number((targetBudget - totalSpent).toFixed(2));
+
+      // Cálculo semanal con Arrastre Negativo (Rollover) para Necesidades y Transporte
+      function buildWeeklyBreakdown(baseWeeks, categoryExpenses) {
+        const result = [];
+        let carryOver = 0;
+
+        for (let i = 0; i < 4; i++) {
+          const weekNum = i + 1;
+          const base = Number(baseWeeks[i] || 0);
+          const rolloverIn = carryOver;
+          const effectiveBudget = base + rolloverIn;
+          const weekSpent = categoryExpenses
+            .filter(e => Number(e.week) === weekNum)
+            .reduce((s, e) => s + Number(e.amount), 0);
+          const remaining = effectiveBudget - weekSpent;
+
+          carryOver = remaining < 0 ? remaining : 0;
+
+          result.push({
+            week: weekNum,
+            base,
+            rolloverIn,
+            effectiveBudget,
+            spent: weekSpent,
+            remaining
+          });
+        }
+        return result;
+      }
+
+      const necesidadesWeeks = buildWeeklyBreakdown(b.necesidades.weeks, expNecesidades);
+      const transporteWeeks = buildWeeklyBreakdown(b.transporte.weeks, expTransporte);
+
+      // Agrupación por Banco / Billetera
+      const bnTotal = Number(b.internet.amount) + Number(b.spotify.amount) + Number(b.mama.amount);
+      const banks = [
+        {
+          bank: 'BN',
+          label: 'Banco de la Nación',
+          assigned: bnTotal,
+          detail: `Internet (${formatPEN(b.internet.amount)}) + Spotify (${formatPEN(b.spotify.amount)}) + Mamá (${formatPEN(b.mama.amount)}) • Mamá disp: ${formatPEN(Number(b.mama.amount) - spentMama)}`
+        },
+        {
+          bank: 'BBVA',
+          label: 'BBVA (Transporte)',
+          assigned: transporteTotal,
+          detail: `Apartado: ${formatPEN(transporteTotal)} • Restante pasajes: ${formatPEN(transporteTotal - spentTransporte)}`
+        },
+        {
+          bank: 'EFECTIVA',
+          label: 'Efectiva (Ahorro)',
+          assigned: Number(b.ahorro.amount),
+          detail: `Ahorro protegido: ${formatPEN(b.ahorro.amount)}`
+        },
+        {
+          bank: 'YAPE',
+          label: 'Yape (Necesidades)',
+          assigned: necesidadesTotal,
+          detail: `Gastado: ${formatPEN(spentNecesidades)} • Restante: ${formatPEN(necesidadesTotal - spentNecesidades)}`
+        },
+        {
+          bank: 'BCP',
+          label: 'BCP (Materiales / Hogar)',
+          assigned: Number(b.materiales.amount),
+          detail: `Gastado: ${formatPEN(spentMateriales)} • Restante: ${formatPEN(Number(b.materiales.amount) - spentMateriales)}`
+        }
+      ];
+
+      return {
+        targetBudget,
+        assignedSum,
+        discrepancy,
+        groupATotal,
+        dynamicSpent,
+        totalSpent,
+        totalRemaining,
+        transporteTotal,
+        necesidadesTotal,
+        spentNecesidades,
+        spentMateriales,
+        spentTransporte,
+        spentMama,
+        remainingMama: Number(b.mama.amount) - spentMama,
+        remainingMateriales: Number(b.materiales.amount) - spentMateriales,
+        necesidadesWeeks,
+        transporteWeeks,
+        banks
+      };
+    }
+
+    /* ==========================================================================
+       APLICACIÓN DE TEMAS DUALES (FONDO + ACENTO)
+       ========================================================================== */
+    function applyThemes() {
+      const html = document.documentElement;
+      html.setAttribute('data-bg', state.theme.bg);
+      html.setAttribute('data-accent', state.theme.accent);
+
+      const bgIcon = document.getElementById('bgModeIcon');
+      const bgLabel = document.getElementById('bgModeLabel');
+      if (state.theme.bg === 'light') {
+        bgIcon.textContent = '☀️';
+        bgLabel.textContent = 'Blanco';
+      } else {
+        bgIcon.textContent = '🌙';
+        bgLabel.textContent = 'Negro';
+      }
+
+      const accIcon = document.getElementById('accentModeIcon');
+      const accLabel = document.getElementById('accentModeLabel');
+      const metaTheme = document.getElementById('metaThemeColor');
+      if (state.theme.accent === 'leaf') {
+        accIcon.textContent = '🍃';
+        accLabel.textContent = 'Hoja';
+        metaTheme.setAttribute('content', state.theme.bg === 'dark' ? '#000000' : '#15803D');
+      } else {
+        accIcon.textContent = '🍂';
+        accLabel.textContent = 'Otoño';
+        metaTheme.setAttribute('content', state.theme.bg === 'dark' ? '#000000' : '#C2410C');
+      }
+    }
+
+    /* ==========================================================================
+       RENDERIZADO PRINCIPAL EN TIEMPO REAL
+       ========================================================================== */
+    function renderAll() {
+      applyThemes();
+      const fin = computeFinancials();
+      const weeksMeta = getCycleWeeks(state.payday);
+      const currentWeekObj = weeksMeta.find(w => w.isCurrent) || weeksMeta[0];
+
+      // 1. Banner de Descuadre Automático
+      const bannerWrap = document.getElementById('discrepancyBannerWrapper');
+      if (Math.abs(fin.discrepancy) > 0.004) {
+        bannerWrap.classList.remove('hidden');
+        document.getElementById('bannerDiffAmount').textContent = formatPEN(fin.discrepancy);
+        document.getElementById('bannerDiffDesc').innerHTML = `
+          La suma de tus categorías (<strong>${formatPEN(fin.assignedSum)}</strong>) no coincide con tu Presupuesto Objetivo (<strong>${formatPEN(fin.targetBudget)}</strong>).
+        `;
+      } else {
+        bannerWrap.classList.add('hidden');
+      }
+
+      // 2. KPIs Superiores
+      const kpiRemaining = document.getElementById('kpiRemaining');
+      kpiRemaining.textContent = formatPEN(fin.totalRemaining);
+      if (fin.totalRemaining < -0.004) {
+        kpiRemaining.classList.remove('accent-text');
+        kpiRemaining.classList.add('text-red-500');
+      } else {
+        kpiRemaining.classList.add('accent-text');
+        kpiRemaining.classList.remove('text-red-500');
+      }
+
+      document.getElementById('kpiTargetBudget').textContent = formatPEN(fin.targetBudget);
+      document.getElementById('kpiSpent').textContent = formatPEN(fin.totalSpent);
+      document.getElementById('cycleBadge').textContent = `Sem ${currentWeekObj.week} • ${currentWeekObj.label}`;
+
+      const pct = fin.targetBudget > 0 ? Math.min(100, Math.max(0, (fin.totalSpent / fin.targetBudget) * 100)) : 0;
+      const bar = document.getElementById('kpiProgressBar');
+      bar.style.width = `${pct}%`;
+      bar.style.backgroundColor = fin.totalRemaining < -0.004 ? 'var(--danger)' : 'var(--accent)';
+
+      // 3. Transferencias por Banco (Chips rápidos + Acordeón detallado)
+      document.getElementById('bankQuickChips').innerHTML = fin.banks.map(bk => `
+        <div class="px-2.5 py-1.5 rounded-xl app-subtle shrink-0 flex items-center gap-1.5">
+          <span class="text-[10px] font-extrabold accent-text">${bk.bank}:</span>
+          <span class="text-[11px] font-extrabold">${formatPEN(bk.assigned)}</span>
+        </div>
+      `).join('');
+
+      document.getElementById('bankSummaryDrawer').innerHTML = fin.banks.map(bk => `
+        <div class="rounded-2xl p-2.5 app-subtle flex items-center justify-between gap-2">
+          <div>
+            <div class="flex items-center gap-1.5">
+              <span class="text-xs font-extrabold accent-text">${bk.bank}</span>
+              <span class="text-[11px] font-medium" style="color: var(--text-secondary);">• ${bk.label}</span>
+            </div>
+            <div class="text-[11px] mt-0.5 leading-snug" style="color: var(--text-secondary);">${bk.detail}</div>
+          </div>
+          <div class="text-xs font-extrabold shrink-0">${formatPEN(bk.assigned)}</div>
+        </div>
+      `).join('');
+
+      // 4. Renderizar la pestaña activa
+      if (activeTab === 'inicio') renderInicioTab(fin, weeksMeta);
+      if (activeTab === 'movimientos') renderMovimientosTab(weeksMeta);
+      if (activeTab === 'resumen') renderResumenTab(fin);
+      if (activeTab === 'ajustes') renderAjustesTab();
+
+      // 5. Actualizar estado activo de la barra inferior
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        const isTab = btn.dataset.tab === activeTab;
+        if (isTab) {
+          btn.classList.add('accent-text');
+          btn.style.backgroundColor = 'var(--accent-soft)';
+        } else {
+          btn.classList.remove('accent-text');
+          btn.style.backgroundColor = 'transparent';
+          btn.style.color = 'var(--text-secondary)';
+        }
+      });
+    }
+
+    /* ==========================================================================
+       PESTAÑA 1: INICIO (VARIABLES SEMANALES, BOLSAS Y FIJOS/APARTADOS)
+       ========================================================================== */
+    function renderInicioTab(fin, weeksMeta) {
+      const container = document.getElementById('tab-inicio');
+      const b = state.budgets;
+      const todayDay = new Date().getDate();
+      const isInternetNear = todayDay >= 22 && todayDay <= 26;
+
+      const renderWeeklySection = ({ title, icon, bank, totalAssigned, weeksData, isNecesidades, badgeNote }) => {
+        const totalSpent = weeksData.reduce((s, w) => s + w.spent, 0);
+        const totalLeft = totalAssigned - totalSpent;
+
+        return `
+          <div class="app-card rounded-3xl p-4 space-y-3">
+            <div class="flex items-start justify-between gap-2">
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="text-lg">${icon}</span>
+                  <h2 class="text-base font-extrabold accent-text">${title}</h2>
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-full app-pill">${bank}</span>
+                </div>
+                <p class="text-[11px] mt-0.5" style="color: var(--text-secondary);">${badgeNote}</p>
+              </div>
+              <div class="text-right shrink-0">
+                <div class="text-[10px] font-semibold" style="color: var(--text-secondary);">Restante</div>
+                <div class="text-sm font-extrabold ${totalLeft < -0.004 ? 'text-red-500' : 'accent-text'}">${formatPEN(totalLeft)}</div>
+              </div>
+            </div>
+
+            <div class="space-y-2.5">
+              ${weeksData.map((w, idx) => {
+                const meta = weeksMeta[idx];
+                const isOver = w.remaining < -0.004;
+                const exceedsMaxResp = isNecesidades && w.spent > b.necesidades.maxResponsible;
+                const progressPct = w.effectiveBudget > 0
+                  ? Math.min(100, Math.max(0, (w.spent / w.effectiveBudget) * 100))
+                  : (w.spent > 0 ? 100 : 0);
+
+                return `
+                  <div class="rounded-2xl p-3 app-subtle ${isOver ? 'border-red-500/80' : (meta.isCurrent ? 'border-2' : '')}" style="${!isOver && meta.isCurrent ? 'border-color: var(--accent);' : ''}">
+                    <div class="flex items-center justify-between gap-2">
+                      <div>
+                        <div class="flex items-center gap-1.5">
+                          <span class="text-xs font-extrabold">Semana ${w.week}</span>
+                          <span class="text-[11px] font-medium" style="color: var(--text-secondary);">(${meta.label})</span>
+                          ${meta.isCurrent ? '<span class="text-[9px] font-extrabold px-1.5 py-0.5 rounded-md accent-soft-badge">HOY</span>' : ''}
+                        </div>
+                        <div class="text-[11px] mt-0.5" style="color: var(--text-secondary);">
+                          Asignado: <strong>${formatPEN(w.base)}</strong> • Gastado: <strong>${formatPEN(w.spent)}</strong>
+                        </div>
+                      </div>
+
+                      <div class="text-right">
+                        <div class="text-[10px] font-semibold" style="color: var(--text-secondary);">Saldo Sem.</div>
+                        <div class="text-sm font-extrabold ${isOver ? 'text-red-500' : 'accent-text'}">
+                          ${formatPEN(w.remaining)}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="w-full h-1.5 rounded-full overflow-hidden mt-2" style="background-color: var(--bg-pill);">
+                      <div class="h-full rounded-full transition-all" style="width: ${progressPct}%; background-color: ${isOver ? 'var(--danger)' : (exceedsMaxResp ? 'var(--warning)' : 'var(--accent)')};"></div>
+                    </div>
+
+                    <div class="mt-2 flex flex-wrap items-center gap-1.5">
+                      ${w.rolloverIn < -0.004 ? `
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-red-500/15 text-red-500">
+                          ⚠️ Arrastre sem. anterior: ${formatPEN(w.rolloverIn)} (Disp: ${formatPEN(w.effectiveBudget)})
+                        </span>
+                      ` : ''}
+
+                      ${isOver ? `
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-red-500/15 text-red-500">
+                          🚨 Exceso descontado de la siguiente semana
+                        </span>
+                      ` : ''}
+
+                      ${isNecesidades ? `
+                        <span class="text-[10px] font-semibold px-2 py-0.5 rounded-lg ${exceedsMaxResp ? 'bg-amber-500/20 text-amber-500 font-bold' : 'app-pill'}">
+                          ${exceedsMaxResp ? '⚠️ Superó máx. responsable (S/ 20.00)' : '🛡️ Gasto máximo responsable: S/ 20.00'}
+                        </span>
+                      ` : ''}
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        `;
+      };
+
+      const renderEnvelopeSection = ({ catKey, title, icon, bank, assigned, spent, remaining, subtitle }) => {
+        const items = state.expenses.filter(e => e.category === catKey).slice(0, 3);
+        const pct = assigned > 0 ? Math.min(100, Math.max(0, (spent / assigned) * 100)) : 0;
+
+        return `
+          <div class="app-card rounded-3xl p-4 space-y-3">
+            <div class="flex items-start justify-between gap-2">
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="text-lg">${icon}</span>
+                  <h2 class="text-base font-extrabold accent-text">${title}</h2>
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-full app-pill">${bank}</span>
+                </div>
+                <p class="text-[11px] mt-0.5" style="color: var(--text-secondary);">${subtitle}</p>
+              </div>
+              <div class="text-right">
+                <div class="text-[10px] font-semibold" style="color: var(--text-secondary);">Restante</div>
+                <div class="text-sm font-extrabold ${remaining < -0.004 ? 'text-red-500' : 'accent-text'}">${formatPEN(remaining)}</div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between text-[11px] mb-1" style="color: var(--text-secondary);">
+                <span>Usado: <strong>${formatPEN(spent)}</strong></span>
+                <span>Total bolsa: <strong>${formatPEN(assigned)}</strong></span>
+              </div>
+              <div class="w-full h-2 rounded-full overflow-hidden" style="background-color: var(--bg-pill);">
+                <div class="h-full rounded-full transition-all" style="width: ${pct}%; background-color: ${remaining < -0.004 ? 'var(--danger)' : 'var(--accent)'};"></div>
+              </div>
+            </div>
+
+            ${items.length > 0 ? `
+              <div class="pt-2 border-t space-y-1.5" style="border-color: var(--border-color);">
+                ${items.map(item => `
+                  <div class="flex items-center justify-between text-xs py-1.5 px-2.5 rounded-xl app-subtle">
+                    <div>
+                      <span class="font-semibold">${escapeHtml(item.concept)}</span>
+                      <span class="block text-[10px]" style="color: var(--text-secondary);">${item.formattedDate}</span>
+                    </div>
+                    <span class="font-bold text-red-500">-${formatPEN(item.amount)}</span>
+                  </div>
+                `).join('')}
+              </div>
+            ` : `
+              <div class="text-[11px] text-center py-2 rounded-xl app-subtle" style="color: var(--text-secondary);">
+                Sin gastos anotados aún en ${title}
+              </div>
+            `}
+          </div>
+        `;
+      };
+
+      // Sección Grupo A: Saldos Fijos y Apartados Automáticos
+      const fixedSectionHTML = `
+        <div class="app-card rounded-3xl p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-base font-extrabold accent-text">Fijos y Apartados (Descuento Global)</h2>
+              <p class="text-[11px]" style="color: var(--text-secondary);">Restados automáticamente del saldo global (${formatPEN(fin.groupATotal)})</p>
+            </div>
+            <button type="button" onclick="openEditBudgetModal()" class="px-2.5 py-1.5 rounded-xl text-[11px] font-bold accent-soft-badge active:scale-95 transition">
+              ✏️ Editar
+            </button>
+          </div>
+
+          <div class="space-y-2">
+            <!-- Internet -->
+            <div class="p-3 rounded-2xl app-subtle flex items-center justify-between gap-2 ${isInternetNear ? 'border-amber-500' : ''}">
+              <div>
+                <div class="flex items-center gap-1.5">
+                  <span class="text-xs font-extrabold">🌐 Internet</span>
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-full app-pill">${b.internet.bank}</span>
+                </div>
+                <div class="mt-1 inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-lg ${isInternetNear ? 'bg-amber-500/20 text-amber-500' : 'accent-soft-badge'}">
+                  <span>⏰ Pago: día 25 de cada mes</span>
+                </div>
+              </div>
+              <div class="text-right">
+                <div class="text-sm font-extrabold">${formatPEN(b.internet.amount)}</div>
+                <div class="text-[10px] font-semibold text-emerald-500">Descontado</div>
+              </div>
+            </div>
+
+            <!-- Spotify -->
+            <div class="p-3 rounded-2xl app-subtle flex items-center justify-between gap-2">
+              <div>
+                <div class="flex items-center gap-1.5">
+                  <span class="text-xs font-extrabold">🎵 Spotify</span>
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-full app-pill">${b.spotify.bank}</span>
+                </div>
+                <div class="text-[10px] mt-0.5" style="color: var(--text-secondary);">Suscripción mensual fija</div>
+              </div>
+              <div class="text-right">
+                <div class="text-sm font-extrabold">${formatPEN(b.spotify.amount)}</div>
+                <div class="text-[10px] font-semibold text-emerald-500">Descontado</div>
+              </div>
+            </div>
+
+            <!-- Ahorro -->
+            <div class="p-3 rounded-2xl app-subtle flex items-center justify-between gap-2">
+              <div>
+                <div class="flex items-center gap-1.5">
+                  <span class="text-xs font-extrabold">💰 Ahorro</span>
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-full app-pill">${b.ahorro.bank}</span>
+                </div>
+                <div class="text-[10px] mt-0.5" style="color: var(--text-secondary);">Fondo intangible protegido</div>
+              </div>
+              <div class="text-right">
+                <div class="text-sm font-extrabold">${formatPEN(b.ahorro.amount)}</div>
+                <div class="text-[10px] font-semibold text-emerald-500">Apartado</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      container.innerHTML =
+        renderWeeklySection({
+          title: 'Necesidades',
+          icon: '🛒',
+          bank: b.necesidades.bank,
+          totalAssigned: fin.necesidadesTotal,
+          weeksData: fin.necesidadesWeeks,
+          isNecesidades: true,
+          badgeNote: 'Descuento dinámico del saldo global • 4 semanas'
+        }) +
+        renderWeeklySection({
+          title: 'Transporte',
+          icon: '🚌',
+          bank: b.transporte.bank,
+          totalAssigned: fin.transporteTotal,
+          weeksData: fin.transporteWeeks,
+          isNecesidades: false,
+          badgeNote: `Apartado global (${formatPEN(fin.transporteTotal)}) • Control de pasajes diarios`
+        }) +
+        renderEnvelopeSection({
+          catKey: 'materiales',
+          title: 'Materiales u hogar',
+          icon: '🏠',
+          bank: b.materiales.bank,
+          assigned: Number(b.materiales.amount),
+          spent: fin.spentMateriales,
+          remaining: fin.remainingMateriales,
+          subtitle: 'Bolsa mensual dinámica • Descuenta del saldo global'
+        }) +
+        renderEnvelopeSection({
+          catKey: 'mama',
+          title: 'Mamá',
+          icon: '❤️',
+          bank: b.mama.bank,
+          assigned: Number(b.mama.amount),
+          spent: fin.spentMama,
+          remaining: fin.remainingMama,
+          subtitle: `Apartado global (${formatPEN(b.mama.amount)}) • Control de compras`
+        }) +
+        fixedSectionHTML;
+    }
+
+    /* ==========================================================================
+       PESTAÑA 2: MOVIMIENTOS (HISTORIAL COMPLETO CON FECHA Y HORA)
+       ========================================================================== */
+    function renderMovimientosTab() {
+      const container = document.getElementById('tab-movimientos');
+      const filtered = historyFilter === 'all'
+        ? state.expenses
+        : state.expenses.filter(e => e.category === historyFilter);
+
+      const catLabels = {
+        necesidades: { name: 'Necesidades', icon: '🛒', bank: state.budgets.necesidades.bank },
+        transporte: { name: 'Transporte', icon: '🚌', bank: state.budgets.transporte.bank },
+        materiales: { name: 'Materiales u hogar', icon: '🏠', bank: state.budgets.materiales.bank },
+        mama: { name: 'Mamá', icon: '❤️', bank: state.budgets.mama.bank }
+      };
+
+      const transportIcons = {
+        Bus: '🚌',
+        Combi: '🚐',
+        Colectivo: '🚙',
+        Taxi: '🚕'
+      };
+
+      container.innerHTML = `
+        <div class="app-card rounded-3xl p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-base font-extrabold accent-text">Movimientos Registrados</h2>
+              <p class="text-[11px]" style="color: var(--text-secondary);">${filtered.length} registro(s) con marca de tiempo automática</p>
+            </div>
+          </div>
+
+          <!-- Filtros rápidos -->
+          <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
+            ${[
+              { id: 'all', label: 'Todos' },
+              { id: 'necesidades', label: '🛒 Necesidades' },
+              { id: 'transporte', label: '🚌 Transporte' },
+              { id: 'materiales', label: '🏠 Materiales' },
+              { id: 'mama', label: '❤️ Mamá' }
+            ].map(f => `
+              <button
+                type="button"
+                onclick="setHistoryFilter('${f.id}')"
+                class="px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 transition ${historyFilter === f.id ? 'accent-bg' : 'app-pill'}"
+              >
+                ${f.label}
+              </button>
+            `).join('')}
+          </div>
+
+          ${filtered.length === 0 ? `
+            <div class="text-center py-8 rounded-2xl app-subtle">
+              <div class="text-2xl mb-1">🧾</div>
+              <div class="text-xs font-bold">No hay gastos registrados</div>
+              <div class="text-[11px] mt-0.5" style="color: var(--text-secondary);">Usa el botón "+ Registrar Gasto" para anotar tu consumo</div>
+            </div>
+          ` : `
+            <div class="space-y-2">
+              ${filtered.map(item => {
+                const meta = catLabels[item.category] || { name: item.category, icon: '💸', bank: '' };
+                const isTransport = item.category === 'transporte';
+                const tIcon = isTransport ? (transportIcons[item.transportType] || '🚌') : meta.icon;
+                const mainTitle = isTransport
+                  ? `${item.transportType}${item.concept ? ` • ${escapeHtml(item.concept)}` : ''}`
+                  : escapeHtml(item.concept || meta.name);
+                const weekInfo = (item.category === 'necesidades' || item.category === 'transporte') && item.week
+                  ? ` • Sem ${item.week}`
+                  : '';
+
+                return `
+                  <div class="p-3 rounded-2xl app-subtle flex items-center justify-between gap-2.5">
+                    <div class="flex items-start gap-2.5 min-w-0">
+                      <div class="w-9 h-9 rounded-xl accent-soft-badge flex items-center justify-center text-base shrink-0">
+                        ${tIcon}
+                      </div>
+                      <div class="min-w-0">
+                        <div class="text-xs font-extrabold truncate">${mainTitle}</div>
+                        <div class="text-[10px] font-semibold mt-0.5" style="color: var(--text-secondary);">
+                          ${meta.name} (${meta.bank})${weekInfo}
+                        </div>
+                        <div class="text-[10px] mt-0.5 accent-text font-semibold">
+                          🕒 ${item.formattedDate}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="flex items-center gap-2 shrink-0">
+                      <span class="text-xs font-extrabold text-red-500">-${formatPEN(item.amount)}</span>
+                      <button
+                        type="button"
+                        onclick="requestDeleteExpense('${item.id}')"
+                        title="Eliminar gasto"
+                        class="w-7 h-7 rounded-lg app-pill flex items-center justify-center text-xs hover:text-red-500 transition"
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          `}
+        </div>
+      `;
+    }
+
+    /* ==========================================================================
+       PESTAÑA 3: RESUMEN CON GRÁFICOS CIRCULARES INTERACTIVOS
+       ========================================================================== */
+    function getThemeChartPalette() {
+      const style = getComputedStyle(document.documentElement);
+      return [
+        style.getPropertyValue('--palette-1').trim() || '#15803D',
+        style.getPropertyValue('--palette-2').trim() || '#10B981',
+        style.getPropertyValue('--palette-3').trim() || '#0D9488',
+        style.getPropertyValue('--palette-4').trim() || '#3B82F6',
+        style.getPropertyValue('--palette-5').trim() || '#84CC16',
+        style.getPropertyValue('--palette-6').trim() || '#06B6D4',
+        style.getPropertyValue('--palette-7').trim() || '#6366F1'
+      ];
+    }
+
+    function destroyCharts() {
+      Object.values(chartInstances).forEach(ch => {
+        if (ch && typeof ch.destroy === 'function') ch.destroy();
+      });
+      chartInstances = {};
+    }
+
+    function renderResumenTab(fin) {
+      const container = document.getElementById('tab-resumen');
+      const b = state.budgets;
+      const palette = getThemeChartPalette();
+
+      // Datos Gráfico 1: 7 Categorías
+      const catItems = [
+        { label: 'Ahorro', value: Number(b.ahorro.amount) },
+        { label: 'Transporte', value: fin.transporteTotal },
+        { label: 'Necesidades', value: fin.necesidadesTotal },
+        { label: 'Mamá', value: Number(b.mama.amount) },
+        { label: 'Internet', value: Number(b.internet.amount) },
+        { label: 'Materiales', value: Number(b.materiales.amount) },
+        { label: 'Spotify', value: Number(b.spotify.amount) }
+      ];
+      const totalCats = catItems.reduce((s, i) => s + i.value, 0) || 1;
+
+      // Datos Gráfico 2: 5 Bancos
+      const bankItems = fin.banks.map(bk => ({ label: bk.bank, value: bk.assigned }));
+      const totalBanks = bankItems.reduce((s, i) => s + i.value, 0) || 1;
+
+      // Datos Gráfico 3: Ejecución Global
+      const execItems = [
+        { label: 'Fijos y Apartados', value: fin.groupATotal, color: palette[0] },
+        { label: 'Variables Gastados', value: fin.dynamicSpent, color: '#F59E0B' },
+        { label: 'Disponible Restante', value: Math.max(0, fin.totalRemaining), color: palette[2] }
+      ];
+      const totalExec = execItems.reduce((s, i) => s + i.value, 0) || 1;
+
+      // Datos Gráfico 4: Transporte por Subcategoría
+      const transportTypes = ['Bus', 'Combi', 'Colectivo', 'Taxi'];
+      const transportExpenses = state.expenses.filter(e => e.category === 'transporte');
+      const transportItems = transportTypes.map((t, idx) => ({
+        label: t,
+        value: transportExpenses.filter(e => e.transportType === t).reduce((s, e) => s + Number(e.amount), 0),
+        color: palette[idx % palette.length]
+      })).filter(i => i.value > 0);
+      const totalTransportExp = transportItems.reduce((s, i) => s + i.value, 0);
+
+      container.innerHTML = `
+        <!-- Gráfico 1: Distribución del Presupuesto por Categoría -->
+        <div class="app-card rounded-3xl p-4 space-y-3">
+          <div>
+            <h2 class="text-base font-extrabold accent-text">Distribución por Categoría</h2>
+            <p class="text-[11px]" style="color: var(--text-secondary);">Total asignado: ${formatPEN(fin.assignedSum)} en 7 categorías</p>
+          </div>
+          <div class="relative h-52 w-full flex items-center justify-center">
+            <canvas id="chartCategories"></canvas>
+          </div>
+          <div class="grid grid-cols-2 gap-1.5 pt-1">
+            ${catItems.map((item, idx) => {
+              const pct = ((item.value / totalCats) * 100).toFixed(1);
+              return `
+                <div class="flex items-center justify-between text-[11px] px-2.5 py-1.5 rounded-xl app-subtle">
+                  <div class="flex items-center gap-1.5 min-w-0">
+                    <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: ${palette[idx]};"></span>
+                    <span class="font-semibold truncate">${item.label}</span>
+                  </div>
+                  <span class="font-extrabold shrink-0 ml-1">${formatPEN(item.value)} <span class="opacity-65 font-normal">(${pct}%)</span></span>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+
+        <!-- Gráfico 2: Distribución por Banco / Billetera -->
+        <div class="app-card rounded-3xl p-4 space-y-3">
+          <div>
+            <h2 class="text-base font-extrabold accent-text">Distribución por Banco / Billetera</h2>
+            <p class="text-[11px]" style="color: var(--text-secondary);">Monto a transferir o mantener en cada cuenta</p>
+          </div>
+          <div class="relative h-48 w-full flex items-center justify-center">
+            <canvas id="chartBanks"></canvas>
+          </div>
+          <div class="grid grid-cols-2 gap-1.5 pt-1">
+            ${bankItems.map((item, idx) => {
+              const pct = ((item.value / totalBanks) * 100).toFixed(1);
+              return `
+                <div class="flex items-center justify-between text-[11px] px-2.5 py-1.5 rounded-xl app-subtle">
+                  <div class="flex items-center gap-1.5">
+                    <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: ${palette[idx]};"></span>
+                    <span class="font-bold">${item.label}</span>
+                  </div>
+                  <span class="font-extrabold">${formatPEN(item.value)} <span class="opacity-65 font-normal">(${pct}%)</span></span>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+
+        <!-- Gráfico 3: Ejecución Global del Ciclo -->
+        <div class="app-card rounded-3xl p-4 space-y-3">
+          <div>
+            <h2 class="text-base font-extrabold accent-text">Ejecución Global del Ciclo</h2>
+            <p class="text-[11px]" style="color: var(--text-secondary);">Proporción de apartados, gastos dinámicos y saldo libre</p>
+          </div>
+          <div class="relative h-48 w-full flex items-center justify-center">
+            <canvas id="chartExecution"></canvas>
+          </div>
+          <div class="space-y-1.5 pt-1">
+            ${execItems.map(item => {
+              const pct = ((item.value / totalExec) * 100).toFixed(1);
+              return `
+                <div class="flex items-center justify-between text-xs px-3 py-2 rounded-xl app-subtle">
+                  <div class="flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: ${item.color};"></span>
+                    <span class="font-semibold">${item.label}</span>
+                  </div>
+                  <span class="font-extrabold">${formatPEN(item.value)} <span class="opacity-65 font-normal">(${pct}%)</span></span>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+
+        <!-- Gráfico 4: Desglose de Transporte -->
+        <div class="app-card rounded-3xl p-4 space-y-3">
+          <div>
+            <h2 class="text-base font-extrabold accent-text">Desglose de Transporte</h2>
+            <p class="text-[11px]" style="color: var(--text-secondary);">Consumo por Bus, Combi, Colectivo y Taxi</p>
+          </div>
+          ${totalTransportExp === 0 ? `
+            <div class="text-center py-6 rounded-2xl app-subtle">
+              <div class="text-2xl mb-1">🚌</div>
+              <div class="text-xs font-bold">Aún no registras pasajes</div>
+              <div class="text-[11px] mt-0.5" style="color: var(--text-secondary);">Cuando registres viajes en Bus, Combi, Colectivo o Taxi aparecerá el gráfico circular aquí</div>
+            </div>
+          ` : `
+            <div class="relative h-48 w-full flex items-center justify-center">
+              <canvas id="chartTransport"></canvas>
+            </div>
+            <div class="grid grid-cols-2 gap-1.5 pt-1">
+              ${transportItems.map(item => {
+                const pct = ((item.value / totalTransportExp) * 100).toFixed(1);
+                return `
+                  <div class="flex items-center justify-between text-xs px-2.5 py-1.5 rounded-xl app-subtle">
+                    <div class="flex items-center gap-1.5">
+                      <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: ${item.color};"></span>
+                      <span class="font-bold">${item.label}</span>
+                    </div>
+                    <span class="font-extrabold">${formatPEN(item.value)} (${pct}%)</span>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          `}
+        </div>
+      `;
+
+      // Inicializar Chart.js después de inyectar los canvas
+      if (typeof Chart !== 'undefined') {
+        destroyCharts();
+        const borderColor = state.theme.bg === 'dark' ? '#111215' : '#FFFFFF';
+        const commonOptions = {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function(ctx) {
+                  const val = Number(ctx.raw || 0);
+                  const datasetSum = ctx.dataset.data.reduce((a, b) => a + Number(b), 0) || 1;
+                  const pct = ((val / datasetSum) * 100).toFixed(1);
+                  return ` ${ctx.label}: ${formatPEN(val)} (${pct}%)`;
+                }
+              }
+            }
+          }
+        };
+
+        const ctxCat = document.getElementById('chartCategories');
+        if (ctxCat) {
+          chartInstances.cat = new Chart(ctxCat, {
+            type: 'doughnut',
+            data: {
+              labels: catItems.map(i => i.label),
+              datasets: [{
+                data: catItems.map(i => i.value),
+                backgroundColor: palette,
+                borderColor,
+                borderWidth: 2
+              }]
+            },
+            options: { ...commonOptions, cutout: '62%' }
+          });
+        }
+
+        const ctxBanks = document.getElementById('chartBanks');
+        if (ctxBanks) {
+          chartInstances.banks = new Chart(ctxBanks, {
+            type: 'pie',
+            data: {
+              labels: bankItems.map(i => i.label),
+              datasets: [{
+                data: bankItems.map(i => i.value),
+                backgroundColor: palette.slice(0, 5),
+                borderColor,
+                borderWidth: 2
+              }]
+            },
+            options: commonOptions
+          });
+        }
+
+        const ctxExec = document.getElementById('chartExecution');
+        if (ctxExec) {
+          chartInstances.exec = new Chart(ctxExec, {
+            type: 'doughnut',
+            data: {
+              labels: execItems.map(i => i.label),
+              datasets: [{
+                data: execItems.map(i => i.value),
+                backgroundColor: execItems.map(i => i.color),
+                borderColor,
+                borderWidth: 2
+              }]
+            },
+            options: { ...commonOptions, cutout: '60%' }
+          });
+        }
+
+        const ctxTrans = document.getElementById('chartTransport');
+        if (ctxTrans && totalTransportExp > 0) {
+          chartInstances.trans = new Chart(ctxTrans, {
+            type: 'doughnut',
+            data: {
+              labels: transportItems.map(i => i.label),
+              datasets: [{
+                data: transportItems.map(i => i.value),
+                backgroundColor: transportItems.map(i => i.color),
+                borderColor,
+                borderWidth: 2
+              }]
+            },
+            options: { ...commonOptions, cutout: '58%' }
+          });
+        }
+      }
+    }
+
+    /* ==========================================================================
+       PESTAÑA 4: AJUSTES (TEMA DUAL, EXPORTAR EXCEL/CSV, REINICIO, ACERCA DE)
+       ========================================================================== */
+    function renderAjustesTab() {
+      const container = document.getElementById('tab-ajustes');
+      container.innerHTML = `
+        <!-- 1. Apariencia y Temas Duales Independientes -->
+        <div class="app-card rounded-3xl p-4 space-y-3">
+          <div>
+            <h2 class="text-base font-extrabold accent-text">Apariencia y Temas</h2>
+            <p class="text-[11px]" style="color: var(--text-secondary);">Combina libremente el fondo de pantalla y el acento de letras</p>
+          </div>
+
+          <div class="space-y-2.5 pt-1">
+            <div>
+              <div class="text-xs font-bold mb-1.5">1. Fondo (Modo)</div>
+              <div class="grid grid-cols-2 gap-2">
+                <button type="button" onclick="setBgTheme('light')" class="p-3 rounded-2xl border text-left transition ${state.theme.bg === 'light' ? 'accent-soft-badge font-extrabold' : 'app-subtle font-semibold'}">
+                  <div class="text-sm">☀️ Blanco</div>
+                  <div class="text-[10px] opacity-75">Claro limpio</div>
+                </button>
+                <button type="button" onclick="setBgTheme('dark')" class="p-3 rounded-2xl border text-left transition ${state.theme.bg === 'dark' ? 'accent-soft-badge font-extrabold' : 'app-subtle font-semibold'}">
+                  <div class="text-sm">🌙 Negro</div>
+                  <div class="text-[10px] opacity-75">OLED puro #000000</div>
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <div class="text-xs font-bold mb-1.5">2. Color de Letras y Acentos</div>
+              <div class="grid grid-cols-2 gap-2">
+                <button type="button" onclick="setAccentTheme('leaf')" class="p-3 rounded-2xl border text-left transition ${state.theme.accent === 'leaf' ? 'accent-soft-badge font-extrabold' : 'app-subtle font-semibold'}">
+                  <div class="text-sm">🍃 Verde Hoja</div>
+                  <div class="text-[10px] opacity-75">Natural y fresco</div>
+                </button>
+                <button type="button" onclick="setAccentTheme('autumn')" class="p-3 rounded-2xl border text-left transition ${state.theme.accent === 'autumn' ? 'accent-soft-badge font-extrabold' : 'app-subtle font-semibold'}">
+                  <div class="text-sm">🍂 Otoño Cálido</div>
+                  <div class="text-[10px] opacity-75">Terracota y ámbar</div>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Configuración de Montos Fijos y Fecha de Pago -->
+        <div class="app-card rounded-3xl p-4 space-y-3">
+          <div>
+            <h2 class="text-base font-extrabold accent-text">Montos Fijos y Ciclo</h2>
+            <p class="text-[11px]" style="color: var(--text-secondary);">Edita tus gastos fijos (ej. Internet S/ 50.00), ingreso objetivo o fecha de pago</p>
+          </div>
+          <button type="button" onclick="openEditBudgetModal()" class="w-full py-3 rounded-2xl font-extrabold text-xs accent-soft-badge transition active:scale-98">
+            ✏️ Editar Montos Fijos y Presupuesto
+          </button>
+        </div>
+
+        <!-- 3. Exportar Datos y Eliminar Gastos (Nuevo Ciclo) -->
+        <div class="app-card rounded-3xl p-4 space-y-3">
+          <div>
+            <h2 class="text-base font-extrabold accent-text">Gestión de Datos</h2>
+            <p class="text-[11px]" style="color: var(--text-secondary);">Exporta tu reporte completo a Excel o limpia los gastos al comenzar un nuevo mes</p>
+          </div>
+
+          <button type="button" onclick="exportToExcel()" class="w-full py-3.5 rounded-2xl font-extrabold text-xs accent-bg flex items-center justify-center gap-2 transition">
+            <span>📊</span>
+            <span>Exportar Reporte Excel (.xlsx)</span>
+          </button>
+
+          <button type="button" onclick="requestResetExpensesDoubleConfirm()" class="w-full py-3 rounded-2xl font-extrabold text-xs text-red-500 bg-red-500/12 border border-red-500/30 flex items-center justify-center gap-2 transition active:scale-98">
+            <span>🗑️</span>
+            <span>Eliminar Datos (Nuevo Ciclo)</span>
+          </button>
+        </div>
+
+        <!-- 4. Acerca de la app -->
+        <div class="app-card rounded-3xl p-4 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <h2 class="text-base font-extrabold accent-text">Acerca de la app</h2>
+            <span class="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full accent-soft-badge">v1.0</span>
+          </div>
+          <div class="rounded-2xl p-3.5 app-subtle space-y-2 text-xs">
+            <div class="flex items-center justify-between">
+              <span style="color: var(--text-secondary);">Aplicación</span>
+              <span class="font-extrabold">Presupuesto Automático</span>
+            </div>
+            <div class="flex items-center justify-between border-t pt-2" style="border-color: var(--border-color);">
+              <span style="color: var(--text-secondary);">Versión</span>
+              <span class="font-extrabold accent-text">1.0</span>
+            </div>
+            <div class="flex items-center justify-between border-t pt-2" style="border-color: var(--border-color);">
+              <span style="color: var(--text-secondary);">Desarrollador</span>
+              <span class="font-extrabold">Orion</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    /* ==========================================================================
+       MODAL 1: REGISTRO RÁPIDO DE GASTOS
+       ========================================================================== */
+    function openExpenseModal() {
+      const weeksMeta = getCycleWeeks(state.payday);
+      const currentWeekObj = weeksMeta.find(w => w.isCurrent) || weeksMeta[0];
+      selectedModalWeek = currentWeekObj.week;
+
+      document.getElementById('amountInput').value = '';
+      document.getElementById('conceptInput').value = '';
+      document.getElementById('transportNoteInput').value = '';
+
+      updateExpenseModalUI();
+      document.getElementById('expenseModal').classList.remove('hidden');
+    }
+
+    function closeExpenseModal() {
+      document.getElementById('expenseModal').classList.add('hidden');
+    }
+
+    function updateExpenseModalUI() {
+      const fin = computeFinancials();
+      const weeksMeta = getCycleWeeks(state.payday);
+
+      document.querySelectorAll('.cat-choice-btn').forEach(btn => {
+        const isSelected = btn.dataset.cat === selectedModalCat;
+        if (isSelected) {
+          btn.classList.add('accent-soft-badge');
+          btn.style.borderColor = 'var(--accent)';
+        } else {
+          btn.classList.remove('accent-soft-badge');
+          btn.style.borderColor = 'var(--border-color)';
+        }
+      });
+
+      const needsWeek = selectedModalCat === 'necesidades' || selectedModalCat === 'transporte';
+      const weekWrapper = document.getElementById('weekSelectorWrapper');
+      if (needsWeek) {
+        weekWrapper.classList.remove('hidden');
+        const weeksSource = selectedModalCat === 'necesidades' ? fin.necesidadesWeeks : fin.transporteWeeks;
+        const weekGrid = document.getElementById('weekSelectorGrid');
+        weekGrid.innerHTML = weeksSource.map((w, idx) => {
+          const isSel = selectedModalWeek === w.week;
+          const meta = weeksMeta[idx];
+          return `
+            <button
+              type="button"
+              onclick="selectModalWeek(${w.week})"
+              class="p-2 rounded-xl border text-center transition ${isSel ? 'accent-soft-badge' : 'app-subtle'}"
+              style="${isSel ? 'border-color: var(--accent);' : ''}"
+            >
+              <div class="text-[11px] font-extrabold">Sem ${w.week}</div>
+              <div class="text-[9px] truncate opacity-80">${meta.label}</div>
+              <div class="text-[10px] font-bold mt-0.5 ${w.remaining < -0.004 ? 'text-red-500' : ''}">${formatPEN(w.remaining)}</div>
+            </button>
+          `;
+        }).join('');
+      } else {
+        weekWrapper.classList.add('hidden');
+      }
+
+      const transportWrapper = document.getElementById('transportSubcatWrapper');
+      const conceptWrapper = document.getElementById('conceptWrapper');
+      if (selectedModalCat === 'transporte') {
+        transportWrapper.classList.remove('hidden');
+        conceptWrapper.classList.add('hidden');
+        document.querySelectorAll('.transport-btn').forEach(btn => {
+          const isSel = btn.dataset.transport === selectedTransportType;
+          if (isSel) {
+            btn.classList.add('accent-soft-badge');
+            btn.style.borderColor = 'var(--accent)';
+          } else {
+            btn.classList.remove('accent-soft-badge');
+            btn.style.borderColor = 'var(--border-color)';
+          }
+        });
+      } else {
+        transportWrapper.classList.add('hidden');
+        conceptWrapper.classList.remove('hidden');
+      }
+    }
+
+    window.selectModalWeek = function(w) {
+      selectedModalWeek = w;
+      updateExpenseModalUI();
+    };
+
+    /* ==========================================================================
+       MODAL 2: EDITOR DE MONTOS FIJOS Y PRESUPUESTO CON VALIDACIÓN DE CUADRE
+       ========================================================================== */
+    window.openEditBudgetModal = function() {
+      const b = state.budgets;
+      document.getElementById('editTargetBudget').value = state.targetBudget;
+      document.getElementById('editInternet').value = b.internet.amount;
+      document.getElementById('editSpotify').value = b.spotify.amount;
+      document.getElementById('editAhorro').value = b.ahorro.amount;
+      document.getElementById('editMama').value = b.mama.amount;
+      document.getElementById('editMateriales').value = b.materiales.amount;
+
+      document.getElementById('editTransW1').value = b.transporte.weeks[0];
+      document.getElementById('editTransW2').value = b.transporte.weeks[1];
+      document.getElementById('editTransW3').value = b.transporte.weeks[2];
+      document.getElementById('editTransW4').value = b.transporte.weeks[3];
+
+      document.getElementById('editNecW1').value = b.necesidades.weeks[0];
+      document.getElementById('editNecW2').value = b.necesidades.weeks[1];
+      document.getElementById('editNecW3').value = b.necesidades.weeks[2];
+      document.getElementById('editNecW4').value = b.necesidades.weeks[3];
+
+      validateBudgetEditor();
+      document.getElementById('editBudgetModal').classList.remove('hidden');
+    };
+
+    function getEditorValues() {
+      const val = (id) => Math.max(0, parseFloat(document.getElementById(id).value) || 0);
+      const target = val('editTargetBudget');
+      const internet = val('editInternet');
+      const spotify = val('editSpotify');
+      const ahorro = val('editAhorro');
+      const mama = val('editMama');
+      const materiales = val('editMateriales');
+      const transWeeks = [val('editTransW1'), val('editTransW2'), val('editTransW3'), val('editTransW4')];
+      const necWeeks = [val('editNecW1'), val('editNecW2'), val('editNecW3'), val('editNecW4')];
+
+      const transSum = transWeeks.reduce((a, b) => a + b, 0);
+      const necSum = necWeeks.reduce((a, b) => a + b, 0);
+      const assignedSum = Number((internet + spotify + ahorro + mama + materiales + transSum + necSum).toFixed(2));
+      const diff = Number((target - assignedSum).toFixed(2));
+
+      return { target, internet, spotify, ahorro, mama, materiales, transWeeks, necWeeks, transSum, necSum, assignedSum, diff };
+    }
+
+    function validateBudgetEditor() {
+      const v = getEditorValues();
+
+      document.getElementById('editTransportTotalPreview').textContent = formatPEN(v.transSum);
+      document.getElementById('editNecesidadesTotalPreview').textContent = formatPEN(v.necSum);
+
+      document.getElementById('edPreviewTarget').textContent = formatPEN(v.target);
+      document.getElementById('edPreviewAssigned').textContent = formatPEN(v.assignedSum);
+
+      const diffEl = document.getElementById('edPreviewDiff');
+      diffEl.textContent = formatPEN(v.diff);
+
+      const box = document.getElementById('editorBalanceBox');
+      const errAlert = document.getElementById('editorErrorAlert');
+      const okAlert = document.getElementById('editorOkAlert');
+      const saveBtn = document.getElementById('btnSaveBudgetChanges');
+      const quickFixContainer = document.getElementById('editorQuickFixContainer');
+
+      if (Math.abs(v.diff) > 0.004) {
+        // Hay descuadre -> Mostrar error rojo y bloquear guardado
+        diffEl.className = 'text-xs font-extrabold mt-0.5 text-red-500';
+        box.className = 'rounded-2xl p-3 mb-4 border-2 border-red-500 bg-red-500/10 transition-all';
+        errAlert.classList.remove('hidden');
+        okAlert.classList.add('hidden');
+        saveBtn.disabled = true;
+
+        const absDiff = Math.abs(v.diff).toFixed(2);
+        const typeText = v.diff < 0
+          ? `te pasaste por S/ ${absDiff}`
+          : `te faltan asignar S/ ${absDiff}`;
+
+        document.getElementById('editorErrorText').textContent =
+          `⚠️ Error: El presupuesto no cuadra (${typeText}). Ajusta una categoría o el ingreso total para equilibrarlo.`;
+
+        // Generar botones inteligentes de auto-cuadre en 1 toque
+        const fixes = [];
+        fixes.push(`
+          <button type="button" onclick="applyQuickFix('target', ${v.assignedSum})" class="px-2.5 py-1.5 rounded-xl text-[10px] font-extrabold bg-red-600 text-white active:scale-95">
+            Ajustar Objetivo a ${formatPEN(v.assignedSum)}
+          </button>
+        `);
+
+        const newMat = Number((v.materiales + v.diff).toFixed(2));
+        if (newMat >= 0) {
+          fixes.push(`
+            <button type="button" onclick="applyQuickFix('materiales', ${newMat})" class="px-2.5 py-1.5 rounded-xl text-[10px] font-extrabold app-card border border-red-500/40 active:scale-95">
+              Dejar Materiales en ${formatPEN(newMat)}
+            </button>
+          `);
+        }
+
+        const newNecW4 = Number((v.necWeeks[3] + v.diff).toFixed(2));
+        if (newNecW4 >= 0) {
+          fixes.push(`
+            <button type="button" onclick="applyQuickFix('necW4', ${newNecW4})" class="px-2.5 py-1.5 rounded-xl text-[10px] font-extrabold app-card border border-red-500/40 active:scale-95">
+              Dejar Nec. Sem 4 en ${formatPEN(newNecW4)}
+            </button>
+          `);
+        }
+
+        quickFixContainer.innerHTML = fixes.join('');
+      } else {
+        // Cuadrado perfecto
+        diffEl.className = 'text-xs font-extrabold mt-0.5 text-emerald-500';
+        box.className = 'rounded-2xl p-3 mb-4 border border-emerald-500/40 bg-emerald-500/10 transition-all';
+        errAlert.classList.add('hidden');
+        okAlert.classList.remove('hidden');
+        saveBtn.disabled = false;
+      }
+    }
+
+    window.applyQuickFix = function(field, newValue) {
+      const valStr = Number(newValue).toFixed(2);
+      if (field === 'target') document.getElementById('editTargetBudget').value = valStr;
+      if (field === 'materiales') document.getElementById('editMateriales').value = valStr;
+      if (field === 'necW4') document.getElementById('editNecW4').value = valStr;
+      validateBudgetEditor();
+    };
+
+    /* ==========================================================================
+       ACCIONES GLOBALES (TEMAS, FILTROS, ELIMINACIÓN CON DOBLE CONFIRMACIÓN, EXCEL)
+       ========================================================================== */
+    window.setBgTheme = function(bg) {
+      state.theme.bg = bg;
+      saveState();
+      renderAll();
+    };
+
+    window.setAccentTheme = function(accent) {
+      state.theme.accent = accent;
+      saveState();
+      renderAll();
+    };
+
+    window.setHistoryFilter = function(filter) {
+      historyFilter = filter;
+      renderAll();
+    };
+
+    function openConfirmModal({ badge, title, message, okText, onConfirm }) {
+      document.getElementById('confirmStepBadge').textContent = badge || 'Confirmación';
+      document.getElementById('confirmTitle').textContent = title;
+      document.getElementById('confirmMessage').textContent = message;
+      document.getElementById('btnConfirmOk').textContent = okText || 'Confirmar';
+      pendingConfirmCallback = onConfirm;
+      document.getElementById('confirmModal').classList.remove('hidden');
+    }
+
+    function closeConfirmModal() {
+      document.getElementById('confirmModal').classList.add('hidden');
+      pendingConfirmCallback = null;
+    }
+
+    window.requestDeleteExpense = function(id) {
+      openConfirmModal({
+        badge: 'Eliminar registro',
+        title: '¿Eliminar este gasto?',
+        message: 'El monto se devolverá automáticamente a tu saldo disponible.',
+        okText: 'Sí, eliminar',
+        onConfirm: () => {
+          state.expenses = state.expenses.filter(e => e.id !== id);
+          saveState();
+          renderAll();
+          showToast('Gasto eliminado y saldo actualizado');
+        }
+      });
+    };
+
+    // Doble confirmación para "Eliminar Datos (Nuevo Ciclo)"
+    window.requestResetExpensesDoubleConfirm = function() {
+      openConfirmModal({
+        badge: 'Paso 1 de 2 • Nuevo Ciclo',
+        title: '¿Iniciar un nuevo ciclo mensual?',
+        message: 'Esta acción borrará todos los gastos registrados en el historial. Tus montos fijos, categorías, bancos y fecha de pago se conservarán intactos.',
+        okText: 'Continuar',
+        onConfirm: () => {
+          setTimeout(() => {
+            openConfirmModal({
+              badge: 'Paso 2 de 2 • Confirmación Final',
+              title: '¿Confirmas el borrado definitivo?',
+              message: `Se eliminarán ${state.expenses.length} movimiento(s) registrado(s). Asegúrate de haber exportado tu Excel si deseas conservar un respaldo.`,
+              okText: 'Sí, borrar gastos',
+              onConfirm: () => {
+                state.expenses = [];
+                saveState();
+                renderAll();
+                showToast('Nuevo ciclo iniciado • Gastos borrados');
+              }
+            });
+          }, 160);
+        }
+      });
+    };
+
+    window.exportToExcel = function() {
+      const fin = computeFinancials();
+      const weeksMeta = getCycleWeeks(state.payday);
+      const b = state.budgets;
+
+      const summaryRows = [
+        ['PRESUPUESTO AUTOMÁTICO v1.0 - DESARROLLADO POR ORION'],
+        ['Fecha de pago configurada', state.payday],
+        ['Presupuesto / Ingreso Objetivo (S/)', fin.targetBudget],
+        ['Suma Categorías Asignadas (S/)', fin.assignedSum],
+        ['Diferencia / Cuadre (S/)', fin.discrepancy],
+        ['Saldo Gastado Total (S/)', fin.totalSpent],
+        ['Saldo Restante Total (S/)', fin.totalRemaining]
+      ];
+
+      const catBankRows = [
+        ['Categoría', 'Grupo', 'Banco / Billetera', 'Asignado (S/)', 'Gastado / Apartado (S/)', 'Restante en Sobre (S/)'],
+        ['Internet (Pago día 25)', 'Fijo (Descuento Global)', b.internet.bank, Number(b.internet.amount), Number(b.internet.amount), 0],
+        ['Spotify', 'Fijo (Descuento Global)', b.spotify.bank, Number(b.spotify.amount), Number(b.spotify.amount), 0],
+        ['Ahorro', 'Fijo (Apartado Global)', b.ahorro.bank, Number(b.ahorro.amount), Number(b.ahorro.amount), Number(b.ahorro.amount)],
+        ['Transporte', 'Apartado Global + Semanal', b.transporte.bank, fin.transporteTotal, fin.spentTransporte, fin.transporteTotal - fin.spentTransporte],
+        ['Mamá', 'Apartado Global + Bolsa', b.mama.bank, Number(b.mama.amount), fin.spentMama, fin.remainingMama],
+        ['Necesidades', 'Dinámico Semanal', b.necesidades.bank, fin.necesidadesTotal, fin.spentNecesidades, fin.necesidadesTotal - fin.spentNecesidades],
+        ['Materiales u hogar', 'Dinámico Bolsa', b.materiales.bank, Number(b.materiales.amount), fin.spentMateriales, fin.remainingMateriales]
+      ];
+
+      const catNames = {
+        necesidades: 'Necesidades',
+        transporte: 'Transporte',
+        materiales: 'Materiales u hogar',
+        mama: 'Mamá'
+      };
+
+      const expenseRows = [
+        ['Fecha y Hora', 'Categoría', 'Semana', 'Rango de Semana', 'Tipo Transporte / Producto', 'Banco', 'Monto (S/)']
+      ];
+
+      state.expenses.forEach(e => {
+        const wObj = weeksMeta.find(w => w.week === Number(e.week));
+        const hasWeek = e.category === 'necesidades' || e.category === 'transporte';
+        const desc = e.category === 'transporte'
+          ? `${e.transportType}${e.concept ? ' - ' + e.concept : ''}`
+          : (e.concept || '');
+
+        expenseRows.push([
+          e.formattedDate,
+          catNames[e.category] || e.category,
+          hasWeek ? `Semana ${e.week}` : 'Mensual',
+          hasWeek && wObj ? wObj.label : 'Todo el ciclo',
+          desc,
+          b[e.category]?.bank || '',
+          Number(e.amount)
+        ]);
+      });
+
+      const todayStr = new Date().toISOString().slice(0, 10);
+
+      // Intentar exportar en formato Excel nativo (.xlsx) con SheetJS
+      try {
+        if (typeof XLSX !== 'undefined') {
+          const wb = XLSX.utils.book_new();
+          const wsSummary = XLSX.utils.aoa_to_sheet(summaryRows);
+          const wsCats = XLSX.utils.aoa_to_sheet(catBankRows);
+          const wsExpenses = XLSX.utils.aoa_to_sheet(expenseRows);
+
+          XLSX.utils.book_append_sheet(wb, wsSummary, 'Resumen General');
+          XLSX.utils.book_append_sheet(wb, wsCats, 'Categorias y Bancos');
+          XLSX.utils.book_append_sheet(wb, wsExpenses, 'Historial de Gastos');
+
+          XLSX.writeFile(wb, `Presupuesto_Automatico_${todayStr}.xlsx`);
+          showToast('Excel (.xlsx) descargado correctamente');
+          return;
+        }
+      } catch (err) {
+        console.warn('Fallback a CSV activado:', err);
+      }
+
+      // Fallback automático a CSV si SheetJS no estuviera disponible offline
+      const allCsvRows = [
+        ...summaryRows,
+        [],
+        ...catBankRows,
+        [],
+        ...expenseRows
+      ];
+      const escapeCSV = (val) => {
+        const str = String(val ?? '');
+        return (str.includes(',') || str.includes('"') || str.includes('\n'))
+          ? `"${str.replace(/"/g, '""')}"`
+          : str;
+      };
+      const csvContent = '\uFEFF' + allCsvRows.map(r => r.map(escapeCSV).join(',')).join('\r\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `Presupuesto_Automatico_${todayStr}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      showToast('Reporte CSV descargado correctamente');
+    };
+
+    function escapeHtml(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    let toastTimer = null;
+    function showToast(msg) {
+      const toast = document.getElementById('toastBanner');
+      toast.textContent = msg;
+      toast.classList.remove('hidden');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        toast.classList.add('hidden');
+      }, 2400);
+    }
+
+    /* ==========================================================================
+       EVENT LISTENERS E INICIALIZACIÓN
+       ========================================================================== */
+    document.addEventListener('DOMContentLoaded', () => {
+      const paydayInput = document.getElementById('paydayInput');
+      paydayInput.value = state.payday;
+      paydayInput.addEventListener('change', (e) => {
+        if (e.target.value) {
+          state.payday = e.target.value;
+          saveState();
+          renderAll();
+          showToast('Semanas recalculadas según tu fecha de pago');
+        }
+      });
+
+      document.getElementById('btnToggleBg').addEventListener('click', () => {
+        setBgTheme(state.theme.bg === 'light' ? 'dark' : 'light');
+      });
+
+      document.getElementById('btnToggleAccent').addEventListener('click', () => {
+        setAccentTheme(state.theme.accent === 'leaf' ? 'autumn' : 'leaf');
+      });
+
+      document.getElementById('btnToggleBanks').addEventListener('click', () => {
+        bankDrawerOpen = !bankDrawerOpen;
+        const drawer = document.getElementById('bankSummaryDrawer');
+        const chevron = document.getElementById('bankChevron');
+        if (bankDrawerOpen) {
+          drawer.classList.remove('hidden');
+          chevron.style.transform = 'rotate(180deg)';
+        } else {
+          drawer.classList.add('hidden');
+          chevron.style.transform = 'rotate(0deg)';
+        }
+      });
+
+      // Navegación inferior de 4 pestañas
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          activeTab = btn.dataset.tab;
+          ['inicio', 'movimientos', 'resumen', 'ajustes'].forEach(t => {
+            const el = document.getElementById(`tab-${t}`);
+            if (t === activeTab) el.classList.remove('hidden');
+            else el.classList.add('hidden');
+          });
+          renderAll();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+      });
+
+      // Modal Registrar Gasto
+      document.getElementById('btnOpenExpenseModal').addEventListener('click', openExpenseModal);
+      document.getElementById('btnCloseExpenseModal').addEventListener('click', closeExpenseModal);
+      document.getElementById('expenseModalBackdrop').addEventListener('click', closeExpenseModal);
+
+      document.querySelectorAll('.cat-choice-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          selectedModalCat = btn.dataset.cat;
+          updateExpenseModalUI();
+        });
+      });
+
+      document.querySelectorAll('.transport-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          selectedTransportType = btn.dataset.transport;
+          updateExpenseModalUI();
+        });
+      });
+
+      document.querySelectorAll('.quick-amt-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.getElementById('amountInput').value = btn.dataset.quickAmount;
+        });
+      });
+
+      document.getElementById('expenseForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const amount = parseFloat(document.getElementById('amountInput').value);
+        if (isNaN(amount) || amount <= 0) {
+          showToast('Ingresa un monto válido mayor a S/ 0.00');
+          return;
+        }
+
+        const isTransport = selectedModalCat === 'transporte';
+        const conceptVal = isTransport
+          ? document.getElementById('transportNoteInput').value.trim()
+          : (document.getElementById('conceptInput').value.trim() || state.budgets[selectedModalCat].name);
+
+        const newExpense = {
+          id: 'exp_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+          category: selectedModalCat,
+          week: (selectedModalCat === 'necesidades' || selectedModalCat === 'transporte') ? selectedModalWeek : null,
+          transportType: isTransport ? selectedTransportType : null,
+          concept: conceptVal,
+          amount: Number(amount.toFixed(2)),
+          timestamp: Date.now(),
+          formattedDate: formatTimestampNow()
+        };
+
+        state.expenses.unshift(newExpense);
+        saveState();
+        closeExpenseModal();
+        renderAll();
+        showToast(`Descontado ${formatPEN(newExpense.amount)} automáticamente`);
+      });
+
+      // Modal Editor de Montos y Fijos
+      document.getElementById('btnCloseEditBudget').addEventListener('click', () => {
+        document.getElementById('editBudgetModal').classList.add('hidden');
+      });
+      document.getElementById('editBudgetBackdrop').addEventListener('click', () => {
+        document.getElementById('editBudgetModal').classList.add('hidden');
+      });
+
+      [
+        'editTargetBudget', 'editInternet', 'editSpotify', 'editAhorro', 'editMama', 'editMateriales',
+        'editTransW1', 'editTransW2', 'editTransW3', 'editTransW4',
+        'editNecW1', 'editNecW2', 'editNecW3', 'editNecW4'
+      ].forEach(id => {
+        document.getElementById(id).addEventListener('input', validateBudgetEditor);
+      });
+
+      document.getElementById('editBudgetForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const v = getEditorValues();
+        if (Math.abs(v.diff) > 0.004) {
+          showToast('Error: El presupuesto debe cuadrar exactamente');
+          return;
+        }
+
+        state.targetBudget = v.target;
+        state.budgets.internet.amount = v.internet;
+        state.budgets.spotify.amount = v.spotify;
+        state.budgets.ahorro.amount = v.ahorro;
+        state.budgets.mama.amount = v.mama;
+        state.budgets.materiales.amount = v.materiales;
+        state.budgets.transporte.weeks = v.transWeeks;
+        state.budgets.necesidades.weeks = v.necWeeks;
+
+        saveState();
+        document.getElementById('editBudgetModal').classList.add('hidden');
+        renderAll();
+        showToast('Montos cuadrados y guardados');
+      });
+
+      // Modal Confirmación
+      document.getElementById('btnConfirmCancel').addEventListener('click', closeConfirmModal);
+      document.getElementById('confirmBackdrop').addEventListener('click', closeConfirmModal);
+      document.getElementById('btnConfirmOk').addEventListener('click', () => {
+        const cb = pendingConfirmCallback;
+        closeConfirmModal();
+        if (typeof cb === 'function') cb();
+      });
+
+      // Render inicial
+      renderAll();
+    });
+  </script>
+</body>
+</html>
