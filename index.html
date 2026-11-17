@@ -227,6 +227,10 @@
       bottom: calc(max(env(safe-area-inset-bottom, 12px), 12px) + 4.45rem);
     }
   </style>
+<link rel="manifest" href="./manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Presupuesto">
 </head>
 <body>
   <!-- Contenedor principal móvil-first centrado para iPhone / Safari -->
@@ -2465,5 +2469,12 @@
       renderAll();
     });
   </script>
+  <script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js', { scope: './' });
+    });
+  }
+</script>
 </body>
 </html>
